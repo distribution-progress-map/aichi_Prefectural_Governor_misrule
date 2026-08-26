@@ -1734,7 +1734,68 @@ const INDEX_PAGE_TITLE =
 document.title = INDEX_PAGE_TITLE;
 document.getElementById("titleBox").textContent =
   INDEX_PAGE_TITLE;
-  
+
+// 初期データ通信は20秒で区切り、失敗時は1回だけ自動再試行する
+async function fetchInitialJson(url) {
+
+  let lastError;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function(){
+      controller.abort();
+    }, 20000);
+
+    try {
+
+      const response = await fetch(url, {
+        signal:controller.signal
+      });
+
+      if(!response.ok){
+        throw new Error("HTTP " + response.status);
+      }
+
+      return await response.json();
+
+    } catch(error) {
+
+      lastError = error;
+
+      if(attempt < 2){
+        await new Promise(function(resolve){
+          setTimeout(resolve, 1000);
+        });
+      }
+
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+  }
+
+  throw lastError;
+}
+
+let initialLoadErrorShown = false;
+
+function showInitialLoadError(message) {
+
+  if(initialLoadErrorShown) return;
+  initialLoadErrorShown = true;
+
+  openConfirm(
+    message +
+    "<br><br>通信環境を確認して、OKを押してください。<br>ページを再読み込みします。",
+    function(){
+      location.reload();
+    },
+    null,
+    "閉じる"
+  );
+}
+
 const params = new URLSearchParams(location.search);
 
 const CURRENT_CITY = params.get("city") || "";
@@ -1811,8 +1872,7 @@ if(IS_PARENT_PAGE){
 // =========================
 // 初期読み込み
 // =========================
-fetch("aichi.geojson")
-  .then(res => res.json())
+fetchInitialJson("aichi.geojson")
   .then(data => {
 
     const filteredFeatures = IS_PARENT_PAGE
@@ -1907,14 +1967,19 @@ fetch("aichi.geojson")
 
     window.fullBounds = boundary.getBounds();
 
+  })
+  .catch(function(error){
+    console.error("市町村境界データの読込みに失敗しました", error);
+    showInitialLoadError(
+      "市町村境界データを読み込めませんでした。"
+    );
   });
 
-fetch(
+fetchInitialJson(
   SCRIPT_URL +
   "?city=" +
   encodeURIComponent(CURRENT_CITY)
 )
-  .then(res => res.json())
   .then(json => {
     document.getElementById("titleBox").textContent =
   "【愛知県】大村知事悪政周知チラシ　配布エリア共有マップ";
@@ -1944,6 +2009,16 @@ fetch(
 
     planned.forEach(drawLayer);
     done.forEach(drawLayer);
+  })
+  .catch(function(error){
+    console.error("配布エリアデータの読込みに失敗しました", error);
+
+    document.getElementById("adminHistoryContent").textContent =
+      "データを取得できませんでした";
+
+    showInitialLoadError(
+      "配布エリアデータを読み込めませんでした。"
+    );
   });
 
 // =========================
