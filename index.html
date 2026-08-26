@@ -1047,7 +1047,7 @@ body{
   }
 
   .reset-panel{
-    left:6px;
+    left:30px;
     bottom:10px;
     padding:5px;
   }
@@ -1069,7 +1069,7 @@ body{
   }
 
   .leaflet-bottom.leaflet-left{
-    bottom:30px;
+    bottom:10px;
     left:6px;
   }
 
@@ -1251,6 +1251,12 @@ body{
   .leaflet-container,
   .leaflet-popup-content{
     font-family: Arial, "Helvetica Neue", sans-serif;
+  }
+
+    /* スマホのみ：＋－ボタンをmapページと同じ大きさにする */
+  .leaflet-control-zoom{
+    transform:scale(0.8);
+    transform-origin:bottom left;
   }
 
 }
