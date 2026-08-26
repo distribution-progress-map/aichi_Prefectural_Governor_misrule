@@ -1684,6 +1684,67 @@ document.title = PAGE_TITLE;
 // データ通信の完了を待たず、市町村名をすぐ表示する
 document.getElementById("titleBox").textContent = PAGE_TITLE;
 
+// 初期データ通信は20秒で区切り、失敗時は1回だけ自動再試行する
+async function fetchInitialJson(url) {
+
+  let lastError;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function(){
+      controller.abort();
+    }, 20000);
+
+    try {
+
+      const response = await fetch(url, {
+        signal:controller.signal
+      });
+
+      if(!response.ok){
+        throw new Error("HTTP " + response.status);
+      }
+
+      return await response.json();
+
+    } catch(error) {
+
+      lastError = error;
+
+      if(attempt < 2){
+        await new Promise(function(resolve){
+          setTimeout(resolve, 1000);
+        });
+      }
+
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+  }
+
+  throw lastError;
+}
+
+let initialLoadErrorShown = false;
+
+function showInitialLoadError(message) {
+
+  if(initialLoadErrorShown) return;
+  initialLoadErrorShown = true;
+
+  openConfirm(
+    message +
+    "<br><br>通信環境を確認して、OKを押してください。<br>ページを再読み込みします。",
+    function(){
+      location.reload();
+    },
+    null,
+    "閉じる"
+  );
+}
+
 document.getElementById("resetViewButton").textContent =
 (CURRENT_CITY || "愛知県") + "を全体表示";
 
@@ -1814,8 +1875,7 @@ if(IS_PARENT_PAGE){
 // =========================
 // 初期読み込み
 // =========================
-fetch("aichi.geojson")
-  .then(res => res.json())
+fetchInitialJson("aichi.geojson")
   .then(data => {
 
     // ポイントの所属市町村判定に使うため、
@@ -1885,14 +1945,19 @@ fetch("aichi.geojson")
     cityBoundaryReady = true;
     restoreSelectedAreaFromIndex();
 
+  })
+  .catch(function(error){
+    console.error("市町村境界データの読込みに失敗しました", error);
+    showInitialLoadError(
+      "市町村境界データを読み込めませんでした。"
+    );
   });
 
-fetch(
+fetchInitialJson(
   SCRIPT_URL +
   "?city=" +
   encodeURIComponent(CURRENT_CITY)
 )
-  .then(res => res.json())
   .then(json => {
     renderAdminHistory(json.areas);
 
@@ -1923,6 +1988,16 @@ fetch(
 
     areaDataReady = true;
     restoreSelectedAreaFromIndex();
+  })
+  .catch(function(error){
+    console.error("配布エリアデータの読込みに失敗しました", error);
+
+    document.getElementById("adminHistoryContent").textContent =
+      "データを取得できませんでした";
+
+    showInitialLoadError(
+      "配布エリアデータを読み込めませんでした。"
+    );
   });
 
 // =========================
