@@ -13,10 +13,8 @@
 <link rel="preconnect" href="https://script.googleusercontent.com">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <style>
 /* =========================
@@ -1792,44 +1790,6 @@ let areaPopupDragStartX = 0;
 let areaPopupDragStartY = 0;
 let areaPopupStartLeft = 0;
 let areaPopupStartTop = 0;
-
-// =========================
-// Leaflet Draw 日本語化
-// =========================
-L.drawLocal.draw.toolbar.buttons.polygon = "エリアを作図";
-L.drawLocal.draw.handlers.polygon.tooltip.start = "地図をクリックして配布エリアの1点目を決めてください";
-L.drawLocal.draw.handlers.polygon.tooltip.cont = "続けてクリックして範囲を囲んでください。最初の点をクリックすると範囲が確定します";
-L.drawLocal.draw.handlers.polygon.tooltip.end = "最初の点をクリックすると範囲が確定します";
-L.drawLocal.draw.handlers.polygon.finish = {
-  title:"この範囲で登録します",
-  text:"この範囲で登録"
-};
-L.drawLocal.draw.toolbar.undo = {
-  title:"直前の点を削除",
-  text:"1つ戻る"
-};
-L.drawLocal.draw.toolbar.cancel = {
-  title:"描画を中止します",
-  text:"キャンセル"
-};
-
-const drawControl = new L.Control.Draw({
-  position:"topleft",
-  draw:{
-    polygon:true,
-    rectangle:false,
-    circle:false,
-    marker:false,
-    polyline:false,
-    circlemarker:false
-  },
-  edit:{
-    featureGroup:drawnItems,
-    edit:false,
-    remove:false
-  }
-});
-
 
 document.getElementById("mobileDrawStart").style.display = "none";
 document.getElementById("mobileDrawPanel").style.display = "none";
