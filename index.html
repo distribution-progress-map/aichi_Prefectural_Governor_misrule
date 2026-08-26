@@ -1727,6 +1727,14 @@ body{
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQ2yW7xLP6HMoljPtirqel_LsS5By4th4T-VjT1HJ5bv5IIM05CnvkhSyiEDl6Iv0Y/exec";
 
+const INDEX_PAGE_TITLE =
+  "【愛知県】大村知事悪政周知チラシ　配布エリア共有マップ";
+
+// Apps Scriptの通信完了を待たずにタイトルを表示
+document.title = INDEX_PAGE_TITLE;
+document.getElementById("titleBox").textContent =
+  INDEX_PAGE_TITLE;
+  
 const params = new URLSearchParams(location.search);
 
 const CURRENT_CITY = params.get("city") || "";
