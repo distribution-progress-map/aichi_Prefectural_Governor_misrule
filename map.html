@@ -186,6 +186,7 @@ body{
   color:#555;
   font-size:12px;
   line-height:1.45;
+  white-space:pre-line;
 }
 
 .area-choice-cancel{
@@ -545,7 +546,15 @@ body{
   background:#ff3333;   /* 配布済（赤） */
 }
 
-
+/* 重なりエリア選択の2つのボックスを上側へ寄せる */
+#areaChoiceOverlay,
+#confirmOverlay.area-preview-confirm{
+  align-items:flex-start;
+  padding-top:70px;
+  padding-bottom:20px;
+  box-sizing:border-box;
+  overflow-y:auto;
+}
 
 @media (max-width:600px) and (pointer:coarse){
   .leaflet-draw{
@@ -622,6 +631,8 @@ body{
 
     box-shadow:0 2px 4px rgba(0,0,0,.25);
 
+    margin-bottom:5px;
+
   }
 
   /* 「囲み終わり」の下に少し隙間 */
@@ -668,21 +679,22 @@ body{
     padding:3px 6px !important;
   }
 
-  /* 全体表示に戻る */
+  /* 「市を全体表示」 */
   .reset-panel{
     left:45px;
     bottom:10px;
     padding:4px 6px;
   }
 
+   /* 「県全体へ戻る」 */
   .parent-link-panel{
-    left:6px;
-    bottom:125px;
+    left:45px;
+    bottom:50px;
     padding:3px 4px;
   }
 
   .parent-link-panel button{
-    font-size:10px;
+    font-size:12px;
     padding:3px 5px;
   }
 
@@ -809,11 +821,14 @@ body{
   }
 
   .reset-panel button,
-  .parent-link-panel button,
   .id-search-panel button,
   .contact-panel button{
     font-size:12px !important;
     line-height:1.2;
+  }
+
+  .parent-link-panel button{
+    font-size:13px !important
   }
 
   .id-search-panel button{
@@ -823,7 +838,7 @@ body{
   }
 
   .id-search-panel input{
-    font-size:12px !important;
+    font-size:16px !important;
   }
 
   .modal-bg{
@@ -868,7 +883,7 @@ body{
     left:6px;
     right:auto;
     top:auto;
-    bottom:70px;
+    bottom:100px;
     width:130px;
     font-size:11px;
     padding:7px;
@@ -1152,6 +1167,11 @@ body{
   margin-bottom:0;
 }
 
+/* 市町村名はスマホの詳細ボックスだけに表示 */
+.map-popup-city-item{
+  display:none;
+}
+
 
 @media (max-width:600px) and (pointer:coarse){
 
@@ -1216,6 +1236,7 @@ body{
     border-radius:4px;
   }
 
+  
   /* 管理者用ID部分も少し小さくする */
   .area-detail-popup #areaDetailPopupContent div{
     overflow-wrap:anywhere;
@@ -1243,6 +1264,121 @@ body{
 
   .area-detail-grip{
     font-size:12px;
+  }
+
+  /* =========================
+     スマホ：indexページと同じエリア詳細表示
+  ========================= */
+  .area-detail-popup{
+    width:85vw !important;
+    max-width:none;
+    max-height:none;
+    padding:8px;
+    overflow:hidden;
+    font-size:11px;
+    line-height:1.35;
+  }
+
+  #areaDetailPopupContent{
+    max-height:18vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding-right:3px;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+  }
+
+  #areaDetailPopupContent::-webkit-scrollbar{
+    width:4px;
+  }
+
+  #areaDetailPopupContent::-webkit-scrollbar-thumb{
+    background:#aaa;
+    border-radius:999px;
+  }
+
+  .area-detail-drag-handle{
+    margin:-8px -8px 5px;
+  }
+
+  .area-detail-popup .popup-info-grid{
+    display:grid;
+    grid-template-columns:minmax(0, 3.5fr) minmax(0, 6.5fr);
+    grid-template-rows:repeat(3, auto);
+    grid-auto-flow:column;
+    font-size:10.5px;
+    line-height:1.35;
+  }
+
+  .map-popup-city-item{
+    display:block;
+  }
+
+  .popup-info-item{
+    min-width:0;
+    padding:3px 5px 3px 0;
+    overflow-wrap:anywhere;
+  }
+
+  .popup-info-item:nth-child(n+4){
+    border-left:1px solid #bcbcbc;
+    padding-right:0;
+    padding-left:7px;
+  }
+
+  .area-detail-delete-note{
+    margin-top:6px !important;
+    font-size:9.5px !important;
+    line-height:1.3 !important;
+  }
+
+  .area-detail-delete-note + br{
+    display:none;
+  }
+
+  .area-detail-done-button,
+  .popup-request-button-row{
+    margin-top:5px;
+  }
+
+  /* 配布予定の2つの操作ボタンだけ横並びにする */
+  .area-detail-done-button + .popup-request-button-row{
+    display:inline-block;
+    margin-left:5px;
+    vertical-align:top;
+  }
+
+  .area-detail-popup #areaDetailPopupContent button{
+    width:auto !important;
+    min-width:0 !important;
+    padding:3px 6px !important;
+    font-size:10px !important;
+    line-height:1.25 !important;
+  }
+
+  .area-detail-popup #areaDetailPopupContent .area-detail-done-button{
+    font-size:11px !important;
+  }
+
+  #areaDetailPopupContent > hr{
+    margin:6px 0 !important;
+  }
+
+  .area-detail-admin-id{
+    font-size:9.5px !important;
+    line-height:1.3;
+    overflow-wrap:anywhere;
+  }
+
+  .area-detail-copy-button{
+    margin-top:3px !important;
+  }
+
+   /* 移動先が1市だけの場合は、ボタンを横幅いっぱいにする */
+  #transferCityModal .transfer-city-button:only-child{
+    grid-column:1 / -1;
+    white-space:nowrap;
   }
 
 }
@@ -2597,7 +2733,10 @@ function startMobileDraw(){
   document.getElementById("mobileDrawPanel").style.display = "flex";
   document.getElementById("mapCenterCross").style.display = "block";
 
-  alert("地図の中心に合わせて「ここに点を追加」を押してください。3点以上で囲めます。");
+  alert(
+    "点を打ちたい位置に+マークを合わせて「ここに点を追加」を押してください。\n" +
+    "3点以上で囲めます。"
+  );
 }
 
 function addMobilePoint(){
@@ -3033,15 +3172,17 @@ function showAreaChoiceOverlay(areaIds, onSelect){
           ? row["枚数"] + "枚"
           : "未入力";
 
-      const shortId =
-        String(id).length > 16
-          ? String(id).slice(0, 16) + "…"
-          : String(id);
+      const personText =
+        row["担当者"] !== "" &&
+        row["担当者"] !== null &&
+        row["担当者"] !== undefined
+          ? row["担当者"]
+          : "未入力";
 
       metaText.textContent =
-        "日付：" + dateText +
-        "　枚数：" + countText +
-        "　ID：" + shortId;
+        "実施日：" + dateText + "\n" +
+        "枚数：" + countText +
+        "　担当：" + personText;
 
       button.appendChild(typeText);
       button.appendChild(metaText);
@@ -3105,7 +3246,7 @@ function previewAreaChoiceById(id){
   areaChoicePreviewActive = true;
 
   map.fitBounds(layer.getBounds(), {
-    padding:IS_PARENT_PAGE ? [60, 60] : [40, 40],
+    padding:isTouchDevice ? [95, 95] : [140, 140],
     animate:false
   });
 
@@ -3119,6 +3260,9 @@ function confirmAreaChoiceSelection(
 ){
 
   if(!previewAreaChoiceById(id)) return;
+
+  document.getElementById("confirmOverlay")
+    .classList.add("area-preview-confirm");
 
   openConfirm(
     "このエリアの詳細を確認しますか？",
@@ -3232,13 +3376,9 @@ function showAreaDetailPopup(row, isPlanned, latlng){
 
   if(isMobile){
 
-    // スマホ：画面右上（上部タイトルの下）
-    left =
-      window.innerWidth -
-      popupWidth -
-      sideMargin;
-
-    top = 55;
+    // スマホ：indexページと同じく左右中央・上部タイトルの下
+    left = (window.innerWidth - popupWidth) / 2;
+    top = 45;
 
   }else{
 
@@ -3572,14 +3712,27 @@ areaDetailDragHandle.addEventListener(
 
 function makePopupHtml(row, isPlanned){
 
-  let html =
-    `<div class="popup-main-info">` +
-    "種類：" + (row["種類"] || "") + "<br>" +
-    "実施日：" + formatDateSimple(row["実施日"]) + "<br>" +
-    "枚数：" + (row["枚数"] || "") + "<br>" +
-    "担当：" + (row["担当者"] || "") + "<br>" +
-    "備考：" + (row["備考"] || "") +
-    `</div>`;
+  let html = `
+    <div class="popup-main-info popup-info-grid">
+      <div class="popup-info-item map-popup-city-item">
+        市町村：${row["市町村"] || CURRENT_CITY || ""}
+      </div>
+      <div class="popup-info-item">
+        種類：${row["種類"] || ""}
+      </div>
+      <div class="popup-info-item">
+        実施日：${formatDateSimple(row["実施日"])}
+      </div>
+      <div class="popup-info-item">
+        担当：${row["担当者"] || ""}
+      </div>
+      <div class="popup-info-item">
+        枚数：${row["枚数"] || ""}
+      </div>
+      <div class="popup-info-item">
+        備考：${row["備考"] || ""}
+      </div>
+    </div>`;
 
 
   if(isPlanned){
@@ -3598,7 +3751,7 @@ function makePopupHtml(row, isPlanned){
       deleteDate.setDate(deleteDate.getDate() + 7);
 
       html +=
-        "<div style='margin-top:8px; font-size:12px; color:#cc0000;'>"
+        "<div class='area-detail-delete-note' style='margin-top:8px; font-size:12px; color:#cc0000;'>"
         + "このエリアは "
         + deleteDate.getFullYear() + "/"
         + (deleteDate.getMonth()+1) + "/"
@@ -3608,7 +3761,7 @@ function makePopupHtml(row, isPlanned){
     }
 
     html += `<br>
-      <button onclick="convertPlannedToDone('${row["ID"]}')">配布済にする</button>`;
+      <button class="area-detail-done-button" onclick="convertPlannedToDone('${row["ID"]}')">配布済にする</button>`;
   }
 
 
@@ -3622,9 +3775,9 @@ function makePopupHtml(row, isPlanned){
 
   html += `
     <hr class="popup-id-divider">
-    <div style="font-size:12px; color:#666;">
+    <div class="area-detail-admin-id" style="font-size:12px; color:#666;">
       管理者用ID：${row["ID"]}<br>
-      <button class="popup-admin-btn"
+      <button class="popup-admin-btn area-detail-copy-button"
       onclick="copyAreaId('${row["ID"]}')"
       style="margin-top:4px; font-size:11px;">IDをコピー</button>
     </div>`;
@@ -3633,13 +3786,68 @@ function makePopupHtml(row, isPlanned){
 }
 
 function copyAreaId(id){
-  navigator.clipboard.writeText(id)
-    .then(function(){
-      alert("IDをコピーしました");
-    })
-    .catch(function(){
-      prompt("このIDをコピーしてください", id);
-    });
+
+  const text = String(id || "");
+
+  if(!text){
+    alert("コピーするIDがありません");
+    return;
+  }
+
+  // 通常のコピー方法
+  if(navigator.clipboard && window.isSecureContext){
+
+    navigator.clipboard.writeText(text)
+      .then(function(){
+        alert("IDをコピーしました");
+      })
+      .catch(function(){
+        copyAreaIdFallback(text);
+      });
+
+    return;
+  }
+
+  // 通常のコピーが使えないブラウザ
+  copyAreaIdFallback(text);
+}
+
+
+function copyAreaIdFallback(text){
+
+  const textarea = document.createElement("textarea");
+
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+
+  textarea.style.position = "fixed";
+  textarea.style.left = "0";
+  textarea.style.top = "0";
+  textarea.style.width = "1px";
+  textarea.style.height = "1px";
+  textarea.style.opacity = "0.01";
+
+  document.body.appendChild(textarea);
+
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  let copied = false;
+
+  try{
+    copied = document.execCommand("copy");
+  }catch(error){
+    copied = false;
+  }
+
+  document.body.removeChild(textarea);
+
+  if(copied){
+    alert("IDをコピーしました");
+  }else{
+    prompt("このIDをコピーしてください", text);
+  }
 }
 
 function renderAdminHistory(areas){
@@ -4251,11 +4459,7 @@ function fitFullBounds(){
   if(isMobile){
 
     map.fitBounds(bounds, {
-
-      // 上側の余白を大きくして、市全体を下へ寄せる。全体表示の大きさ。
-      paddingTopLeft:[100, 190],
-      paddingBottomRight:[50, 50],
-
+      padding:[50, 50],
       animate:false
     });
 
@@ -4310,8 +4514,11 @@ function openConfirm(
 
 function closeConfirm(){
 
-  document.getElementById("confirmOverlay").style.display =
-    "none";
+  const overlay =
+    document.getElementById("confirmOverlay");
+
+  overlay.style.display = "none";
+  overlay.classList.remove("area-preview-confirm");
 
   confirmCallback = null;
   confirmCancelCallback = null;

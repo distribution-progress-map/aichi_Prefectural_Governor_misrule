@@ -142,6 +142,7 @@ body{
   color:#555;
   font-size:12px;
   line-height:1.45;
+  white-space:pre-line;
 }
 
 .area-choice-cancel{
@@ -807,6 +808,24 @@ body{
   background:#ff3333;   /* 配布済（赤） */
 }
 
+/* 重なったエリアの確認ボックスだけ上側へ寄せる */
+#confirmOverlay.area-preview-confirm{
+  align-items:flex-start;
+  padding-top:70px;
+  box-sizing:border-box;
+}
+
+
+/* 重なりエリア選択の2つのボックスを上側へ寄せる */
+#areaChoiceOverlay,
+#confirmOverlay.area-preview-confirm{
+  align-items:flex-start;
+  padding-top:70px;
+  padding-bottom:20px;
+  box-sizing:border-box;
+  overflow-y:auto;
+}
+
 
 @media (max-width:600px) and (pointer:coarse){
   .area-detail-popup{
@@ -894,7 +913,7 @@ body{
   }
 
   #parentNotice{
-    top:70px;
+    top:65px;
     left:10px;
 
     padding:8px 10px;
@@ -1237,7 +1256,7 @@ body{
 
   .legend-panel{
     left:6px;     /* +-ボタンの右 */
-    bottom:100px;    /* 全体表示ボタンの上ラインに合わせる */
+    bottom:80px;    /* 全体表示ボタンの上ラインに合わせる */
     right:auto;
     font-size:11px;
     padding:5px 7px;
@@ -1258,6 +1277,104 @@ body{
     transform:scale(0.8);
     transform-origin:bottom left;
   }
+
+    /* =========================
+     スマホ：エリア詳細を横長・省スペース化
+  ========================= */
+
+  .area-detail-popup{
+    width:85vw;
+    max-width:none;
+    max-height:none;
+    padding:8px;
+    overflow:hidden;
+    font-size:11px;
+    line-height:1.35;
+  }
+
+    /* 詳細の内容部分だけスクロール */
+  #areaDetailPopupContent{
+    max-height:18vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding-right:3px;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+  }
+
+  #areaDetailPopupContent::-webkit-scrollbar{
+    width:4px;
+  }
+
+  #areaDetailPopupContent::-webkit-scrollbar-thumb{
+    background:#aaa;
+    border-radius:999px;
+  }
+
+  .area-detail-drag-handle{
+    margin:-8px -8px 5px;
+  }
+
+  /* 市町村～備考を2列にする */
+  .area-detail-popup .popup-info-grid{
+    display:grid;
+    grid-template-columns:minmax(0, 3.5fr) minmax(0, 6.5fr);
+    grid-template-rows:repeat(3, auto);
+    grid-auto-flow:column;
+    font-size:10.5px;
+    line-height:1.35;
+  }
+
+  .popup-info-item{
+    min-width:0;
+    padding:3px 5px 3px 0;
+    overflow-wrap:anywhere;
+  }
+
+  /* 右側の列に縦線を付ける */
+  .popup-info-item:nth-child(n+4){
+    border-left:1px solid #bcbcbc;
+    padding-right:0;
+    padding-left:7px;
+  }
+
+  /* 修正・削除依頼の説明 */
+  #areaDetailPopupContent > div:nth-child(2){
+    margin-top:6px !important;
+    font-size:9.5px !important;
+    line-height:1.3 !important;
+  }
+
+  /* 市町村ページへ移動 */
+  #areaDetailPopupContent > .popup-admin-btn{
+    margin-top:5px !important;
+    padding:3px 6px !important;
+    font-size:10px !important;
+    line-height:1.25;
+  }
+
+  /* 管理者IDの上の区切り線 */
+  #areaDetailPopupContent > hr{
+    margin:6px 0 !important;
+  }
+
+  /* 管理者用ID */
+  #areaDetailPopupContent > div:last-child{
+    font-size:9.5px !important;
+    line-height:1.3;
+    overflow-wrap:anywhere;
+  }
+
+  /* IDをコピー */
+  #areaDetailPopupContent > div:last-child .popup-admin-btn{
+    margin-top:3px !important;
+    padding:3px 6px !important;
+    font-size:10px !important;
+    line-height:1.25;
+  }
+
+ 
 
 }
 
@@ -1375,7 +1492,7 @@ body{
       <span class="area-detail-title">エリア詳細</span>
       <span class="area-detail-move-hint">
         <span class="area-detail-grip">⠿</span>
-        ここを持って移動
+        ここを持って移動できます
       </span>
     </div>
 
@@ -1461,7 +1578,7 @@ body{
   <input
     id="citySearchInput"
     type="text"
-    placeholder="市町村名を入力"
+    placeholder="市町村名で検索"
     onkeydown="if(event.key === 'Enter') searchCity()"
   >
   <button type="button" onclick="searchCity()">検索</button>
@@ -1971,8 +2088,10 @@ fetchInitialJson("aichi.geojson")
 
     }).addTo(map);
 
+    // 愛知県全体の初期表示の大きさ設定
+    //　↓数字を小さくすると表示が大きくなる（余白の大きさを指定してる）
     map.fitBounds(boundary.getBounds(), {
-      padding:[40, 40]
+        padding:[20, 20]
     });
 
     window.fullBounds = boundary.getBounds();
@@ -2506,15 +2625,17 @@ function showAreaChoiceOverlay(areaIds, onSelect){
           ? row["枚数"] + "枚"
           : "未入力";
 
-      const shortId =
-        String(id).length > 16
-          ? String(id).slice(0, 16) + "…"
-          : String(id);
+      const personText =
+        row["担当者"] !== "" &&
+        row["担当者"] !== null &&
+        row["担当者"] !== undefined
+          ? row["担当者"]
+          : "未入力";
 
       metaText.textContent =
-        "日付：" + dateText +
-        "　枚数：" + countText +
-        "　ID：" + shortId;
+        "実施日：" + dateText + "\n" +
+        "枚数：" + countText +
+        "　担当：" + personText;
 
       button.appendChild(typeText);
       button.appendChild(metaText);
@@ -2580,7 +2701,7 @@ function previewAreaChoiceById(id){
   areaChoicePreviewActive = true;
 
   map.fitBounds(layer.getBounds(), {
-    padding:IS_PARENT_PAGE ? [60, 60] : [40, 40],
+    padding:isTouchDevice ? [95, 95] : [140, 140],
     animate:false
   });
 
@@ -2594,6 +2715,11 @@ function confirmAreaChoiceSelection(
 ){
 
   if(!previewAreaChoiceById(id)) return;
+
+  document.getElementById("confirmOverlay")
+  .classList.add("area-preview-confirm");
+
+
 
   openConfirm(
     "このエリアの詳細を確認しますか？",
@@ -2678,9 +2804,9 @@ function positionAreaDetailPopup(layer){
 
   if(isMobile){
 
-    // スマホ：画面右上（上部タイトルの下）
-    left = window.innerWidth - popupWidth - edge;
-    top = 55;
+    // スマホ：左右中央・上部タイトルの下
+    left = (window.innerWidth - popupWidth) / 2;
+    top = 45;
 
   }else{
 
@@ -2886,13 +3012,68 @@ function makePopupHtml(row, isPlanned){
 }
 
 function copyAreaId(id){
-  navigator.clipboard.writeText(id)
-    .then(function(){
-      alert("IDをコピーしました");
-    })
-    .catch(function(){
-      prompt("このIDをコピーしてください", id);
-    });
+
+  const text = String(id || "");
+
+  if(!text){
+    alert("コピーするIDがありません");
+    return;
+  }
+
+  // 通常のコピー方法
+  if(navigator.clipboard && window.isSecureContext){
+
+    navigator.clipboard.writeText(text)
+      .then(function(){
+        alert("IDをコピーしました");
+      })
+      .catch(function(){
+        copyAreaIdFallback(text);
+      });
+
+    return;
+  }
+
+  // 通常のコピーが使えないブラウザ
+  copyAreaIdFallback(text);
+}
+
+
+function copyAreaIdFallback(text){
+
+  const textarea = document.createElement("textarea");
+
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+
+  textarea.style.position = "fixed";
+  textarea.style.left = "0";
+  textarea.style.top = "0";
+  textarea.style.width = "1px";
+  textarea.style.height = "1px";
+  textarea.style.opacity = "0.01";
+
+  document.body.appendChild(textarea);
+
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  let copied = false;
+
+  try{
+    copied = document.execCommand("copy");
+  }catch(error){
+    copied = false;
+  }
+
+  document.body.removeChild(textarea);
+
+  if(copied){
+    alert("IDをコピーしました");
+  }else{
+    prompt("このIDをコピーしてください", text);
+  }
 }
 
 function renderAdminHistory(areas){
@@ -3374,9 +3555,11 @@ function resetView(){
   closeAreaDetailPopup(false);
   map.closePopup();
 
+  // 「愛知県を全体示」の時の大きさ設定
+  //　↓数字を小さくすると表示が大きくなる（余白の大きさを指定してる）
   if(window.fullBounds){
     map.fitBounds(window.fullBounds, {
-      padding:[30, 30]
+        padding:[20, 20]
     });
   }
 }
@@ -3396,9 +3579,16 @@ function openConfirm(
 }
 
 function closeConfirm(){
-  document.getElementById("confirmOverlay").style.display = "none";
+
+  const overlay =
+    document.getElementById("confirmOverlay");
+
+  overlay.style.display = "none";
+  overlay.classList.remove("area-preview-confirm");
+
   confirmCallback = null;
   confirmCancelCallback = null;
+
   document.getElementById("confirmCancelButton").textContent =
     "キャンセル";
 }
@@ -3652,24 +3842,41 @@ function clearAreaHighlight(){
 function makeParentAreaDetailHtml(row){
 
   return `
-    <div class="popup-main-info">
-      市町村：${row["市町村"] || ""}<br>
-      種類：${row["種類"] || ""}<br>
-      実施日：${formatDateSimple(row["実施日"])}<br>
-      枚数：${row["枚数"] || ""}<br>
-      担当：${row["担当者"] || ""}<br>
-      備考：${row["備考"] || ""}
+    <div class="popup-main-info popup-info-grid">
+
+      <div class="popup-info-item">
+        市町村：${row["市町村"] || ""}
+      </div>
+
+      <div class="popup-info-item">
+        種類：${row["種類"] || ""}
+      </div>
+
+      <div class="popup-info-item">
+        実施日：${formatDateSimple(row["実施日"])}
+      </div>
+
+      <div class="popup-info-item">
+        担当：${row["担当者"] || ""}
+      </div>
+
+      <div class="popup-info-item">
+        枚数：${row["枚数"] || ""}
+      </div>
+
+      <div class="popup-info-item">
+        備考：${row["備考"] || ""}
+      </div>
+
     </div>
 
       <div style="
         margin-top:10px;
-        font-size:12px;
+        font-size:13px;
         line-height:1.5;
         color:#666;
-        text-decoration:underline;
-        text-underline-offset:2px;
-      ">
-        ※作図済みエリアの修正・削除依頼は、<br>各市町村ページからお願いします。
+       ">
+        ※作図済みエリアの修正・削除依頼は、各市町村ページにて
       </div>
 
     <button
