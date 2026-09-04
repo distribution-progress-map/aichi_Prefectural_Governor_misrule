@@ -3246,7 +3246,7 @@ function previewAreaChoiceById(id){
   areaChoicePreviewActive = true;
 
   map.fitBounds(layer.getBounds(), {
-    padding:isTouchDevice ? [95, 95] : [140, 140],
+    padding:[60, 60],
     animate:false
   });
 
@@ -3430,7 +3430,7 @@ function selectAreaById(areaId){
     item.row["種類"] === "配布予定";
 
   map.fitBounds(layer.getBounds(), {
-    padding:[40, 40],
+    padding:[60, 60],
     animate:false
   });
 
