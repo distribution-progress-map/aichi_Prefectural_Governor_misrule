@@ -11,6 +11,29 @@
 <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
+<!-- 初期データをLeaflet読込みと並行して先行取得 -->
+<script>
+window.MAP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm3c10xaxFoGNIyhIDPe5PohfV3ObSRBkuMSLVAIw0BNjQT5A4v2EO3rAgsbKd_dMI/exec";
+(function(){
+  function earlyJson(url){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    return fetch(url, { signal:controller.signal })
+      .then(res => {
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .catch(error => {
+        console.warn("先行読込みを通常読込みへ切り替えます", error);
+        return null;
+      })
+      .finally(() => clearTimeout(timer));
+  }
+  window.__initialBoundaryDataPromise = earlyJson("aichi.geojson");
+  window.__initialAreaDataPromise = earlyJson(window.MAP_SCRIPT_URL);
+})();
+</script>
+
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -1852,7 +1875,7 @@ body{
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm3c10xaxFoGNIyhIDPe5PohfV3ObSRBkuMSLVAIw0BNjQT5A4v2EO3rAgsbKd_dMI/exec";
+const SCRIPT_URL = window.MAP_SCRIPT_URL;
 
 const INDEX_PAGE_TITLE =
   "【愛知県】大村知事悪政周知チラシ　配布エリア共有マップ";
@@ -1903,6 +1926,21 @@ async function fetchInitialJson(url) {
   }
 
   throw lastError;
+}
+
+// headで始めた先行通信を優先し、失敗時だけ通常の再試行処理へ戻す
+async function getInitialBoundaryData(){
+  const early = window.__initialBoundaryDataPromise
+    ? await window.__initialBoundaryDataPromise
+    : null;
+  return early || fetchInitialJson("aichi.geojson");
+}
+
+async function getInitialAreaData(){
+  const early = window.__initialAreaDataPromise
+    ? await window.__initialAreaDataPromise
+    : null;
+  return early || fetchInitialJson(SCRIPT_URL);
 }
 
 let initialLoadErrorShown = false;
@@ -1999,7 +2037,7 @@ if(IS_PARENT_PAGE){
 // =========================
 // 初期読み込み
 // =========================
-fetchInitialJson("aichi.geojson")
+getInitialBoundaryData()
   .then(data => {
 
     const filteredFeatures = IS_PARENT_PAGE
@@ -2104,11 +2142,7 @@ fetchInitialJson("aichi.geojson")
     );
   });
 
-fetchInitialJson(
-  SCRIPT_URL +
-  "?city=" +
-  encodeURIComponent(CURRENT_CITY)
-)
+getInitialAreaData()
   .then(json => {
     document.getElementById("titleBox").textContent =
   "【愛知県】大村知事悪政周知チラシ　配布エリア共有マップ";
@@ -2199,7 +2233,7 @@ function drawLayer(item){
     layer.on("click", function(){
 
       map.fitBounds(layer.getBounds(), {
-        padding:[60, 60]
+        padding:[40, 40]
       });
     });
   }
@@ -2267,7 +2301,7 @@ function saveNewArea(geo, layer, formData){
     layer.bindPopup(makePopupHtml(newRow, isPlanned));
     layer.on("click", function(){
       map.fitBounds(layer.getBounds(), {
-        padding:[60, 60],
+        padding:[40, 40],
       });
     });
 
@@ -2701,7 +2735,7 @@ function previewAreaChoiceById(id){
   areaChoicePreviewActive = true;
 
   map.fitBounds(layer.getBounds(), {
-    padding:[60, 60],
+    padding:isTouchDevice ? [95, 95] : [140, 140],
     animate:false
   });
 
@@ -3161,7 +3195,7 @@ async function convertPlannedToDone(id){
     doneLayer.bindPopup(makePopupHtml(doneRow, false));
     doneLayer.on("click", function(){
       map.fitBounds(doneLayer.getBounds(), {
-        padding:[60, 60],
+        padding:[40, 40],
       });
     });
 

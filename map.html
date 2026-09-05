@@ -11,12 +11,40 @@
 <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
+<!-- 市境界・配布エリアをLeaflet読込みと並行して先行取得 -->
+<script>
+window.MAP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm3c10xaxFoGNIyhIDPe5PohfV3ObSRBkuMSLVAIw0BNjQT5A4v2EO3rAgsbKd_dMI/exec";
+(function(){
+  const city = new URLSearchParams(location.search).get("city") || "";
+  function earlyJson(url){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    return fetch(url, { signal:controller.signal })
+      .then(res => {
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .catch(error => {
+        console.warn("先行読込みを通常読込みへ切り替えます", error);
+        return null;
+      })
+      .finally(() => clearTimeout(timer));
+  }
+  const boundaryUrl = city
+    ? "cities/" + encodeURIComponent(city) + ".geojson"
+    : "aichi.geojson";
+  window.__initialBoundaryUrl = boundaryUrl;
+  window.__initialBoundaryDataPromise = earlyJson(boundaryUrl);
+  window.__initialAreaDataPromise = earlyJson(
+    window.MAP_SCRIPT_URL + "?city=" + encodeURIComponent(city)
+  );
+})();
+</script>
+
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <style>
 /* =========================
@@ -502,6 +530,36 @@ body{
 
 
 /* =========================
+   PC：Leaflet Draw遅延読込み用ボタン
+========================= */
+.desktop-draw-start{
+  display:none;
+  position:absolute;
+  left:20px;
+  top:90px;
+  z-index:2000;
+}
+
+.desktop-draw-start button{
+  font-size:18px;
+  font-weight:bold;
+  color:white;
+  background:linear-gradient(#ff9f1a, #f58200);
+  padding:13px 10px;
+  border-radius:6px;
+  border:2px solid white;
+  box-shadow:0 2px 4px rgba(0,0,0,.25);
+  text-shadow:0 1px 1px rgba(0,0,0,.25);
+  cursor:pointer;
+}
+
+.desktop-draw-start button:disabled,
+.mobile-draw-start button:disabled{
+  opacity:.7;
+  cursor:wait;
+}
+
+/* =========================
    スマホ中央ポイント作図UI
 ========================= */
 .mobile-draw-start,
@@ -554,6 +612,10 @@ body{
   padding-bottom:20px;
   box-sizing:border-box;
   overflow-y:auto;
+}
+
+@media (min-width:601px){
+  .desktop-draw-start{ display:block; }
 }
 
 @media (max-width:600px) and (pointer:coarse){
@@ -1499,9 +1561,14 @@ body{
   </div>
 </div>
 
+<!-- PC専用：Leaflet Drawは押した時に初めて読み込む -->
+<div class="desktop-draw-start" id="desktopDrawStart">
+  <button id="desktopDrawStartButton" onclick="startDesktopDraw()">✎　エリアを作図</button>
+</div>
+
 <!-- スマホ専用：中央ポイント作図 -->
 <div class="mobile-draw-start" id="mobileDrawStart">
-  <button onclick="startMobileDraw()">エリアを作図</button>
+  <button id="mobileDrawStartButton" onclick="startMobileDraw()">エリアを作図</button>
 </div>
 
 <div class="mobile-draw-panel" id="mobileDrawPanel">
@@ -1797,7 +1864,7 @@ body{
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm3c10xaxFoGNIyhIDPe5PohfV3ObSRBkuMSLVAIw0BNjQT5A4v2EO3rAgsbKd_dMI/exec";
+const SCRIPT_URL = window.MAP_SCRIPT_URL;
 
 const params = new URLSearchParams(location.search);
 
@@ -1861,6 +1928,28 @@ async function fetchInitialJson(url) {
   }
 
   throw lastError;
+}
+
+// headで始めた先行通信を優先し、失敗時だけ通常の再試行処理へ戻す
+async function getInitialBoundaryData(){
+  const early = window.__initialBoundaryDataPromise
+    ? await window.__initialBoundaryDataPromise
+    : null;
+  return early || fetchInitialJson(
+    window.__initialBoundaryUrl ||
+    (CURRENT_CITY
+      ? "cities/" + encodeURIComponent(CURRENT_CITY) + ".geojson"
+      : "aichi.geojson")
+  );
+}
+
+async function getInitialAreaData(){
+  const early = window.__initialAreaDataPromise
+    ? await window.__initialAreaDataPromise
+    : null;
+  return early || fetchInitialJson(
+    SCRIPT_URL + "?city=" + encodeURIComponent(CURRENT_CITY)
+  );
 }
 
 let initialLoadErrorShown = false;
@@ -1944,88 +2033,186 @@ let ignoreNextClick = false;
 
 
 // =========================
-// Leaflet Draw 日本語化
+// 作図用データ・Leaflet Drawは必要になった時だけ読み込む
 // =========================
-L.drawLocal.draw.toolbar.buttons.polygon = "エリアを作図";
-L.drawLocal.draw.handlers.polygon.tooltip.start = "地図をクリックして配布エリアの1点目を決めてください";
-L.drawLocal.draw.handlers.polygon.tooltip.cont = "続けてクリックして範囲を囲んでください。最初の点をクリックすると範囲が確定します";
-L.drawLocal.draw.handlers.polygon.tooltip.end = "最初の点をクリックすると範囲が確定します";
-L.drawLocal.draw.handlers.polygon.finish = {
-  title:"この範囲で登録します",
-  text:"この範囲で登録"
-};
-L.drawLocal.draw.toolbar.undo = {
-  title:"直前の点を削除",
-  text:"1つ戻る"
-};
-L.drawLocal.draw.toolbar.cancel = {
-  title:"描画を中止します",
-  text:"キャンセル"
-};
+let drawControl = null;
+let leafletDrawLoadPromise = null;
+let allCityFeaturesPromise = null;
 
-const drawControl = new L.Control.Draw({
-  position:"topleft",
-  draw:{
-    polygon:{
-      shapeOptions:{
-        pane:"drawAreaPane",
-        renderer:drawAreaRenderer,
-        color:"#ff6600",
-        weight:5,
-        fillColor:"#ff9800",
-        fillOpacity:0.15
-      }
-    },
+function configureLeafletDrawJapanese(){
+  if(!window.L || !L.drawLocal) return;
 
-    rectangle:false,
-    circle:false,
-    marker:false,
-    polyline:false,
-    circlemarker:false
-  },
-  edit:{
-    featureGroup:drawnItems,
-    edit:false,
-    remove:false
+  L.drawLocal.draw.toolbar.buttons.polygon = "エリアを作図";
+  L.drawLocal.draw.handlers.polygon.tooltip.start = "地図をクリックして配布エリアの1点目を決めてください";
+  L.drawLocal.draw.handlers.polygon.tooltip.cont = "続けてクリックして範囲を囲んでください。最初の点をクリックすると範囲が確定します";
+  L.drawLocal.draw.handlers.polygon.tooltip.end = "最初の点をクリックすると範囲が確定します";
+  L.drawLocal.draw.handlers.polygon.finish = {
+    title:"この範囲で登録します",
+    text:"この範囲で登録"
+  };
+  L.drawLocal.draw.toolbar.undo = {
+    title:"直前の点を削除",
+    text:"1つ戻る"
+  };
+  L.drawLocal.draw.toolbar.cancel = {
+    title:"描画を中止します",
+    text:"キャンセル"
+  };
+}
+
+function loadLeafletDraw(){
+  if(window.L && L.Control && L.Control.Draw){
+    return Promise.resolve();
   }
-});
 
-if(!IS_PARENT_PAGE){
+  if(leafletDrawLoadPromise){
+    return leafletDrawLoadPromise;
+  }
+
+  leafletDrawLoadPromise = new Promise((resolve, reject) => {
+    if(!document.querySelector('link[data-leaflet-draw-lazy]')){
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css";
+      css.dataset.leafletDrawLazy = "1";
+      document.head.appendChild(css);
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js";
+    script.async = true;
+    script.onload = () => {
+      configureLeafletDrawJapanese();
+      resolve();
+    };
+    script.onerror = () => reject(new Error("Leaflet Drawの読込みに失敗しました"));
+    document.head.appendChild(script);
+  });
+
+  return leafletDrawLoadPromise;
+}
+
+async function ensureAllCityFeaturesLoaded(){
+  if(allCityFeatures.length){
+    return allCityFeatures;
+  }
+
+  if(!allCityFeaturesPromise){
+    allCityFeaturesPromise = fetchInitialJson("aichi.geojson")
+      .then(data => {
+        allCityFeatures = data.features.filter(f =>
+          f.properties.N03_004 &&
+          f.properties.N03_004 !== "所属未定地"
+        );
+        return allCityFeatures;
+      })
+      .catch(error => {
+        allCityFeaturesPromise = null;
+        throw error;
+      });
+  }
+
+  return allCityFeaturesPromise;
+}
+
+function createLeafletDrawControl(){
+  if(drawControl) return drawControl;
+
+  drawControl = new L.Control.Draw({
+    position:"topleft",
+    draw:{
+      polygon:{
+        shapeOptions:{
+          pane:"drawAreaPane",
+          renderer:drawAreaRenderer,
+          color:"#ff6600",
+          weight:5,
+          fillColor:"#ff9800",
+          fillOpacity:0.15
+        }
+      },
+      rectangle:false,
+      circle:false,
+      marker:false,
+      polyline:false,
+      circlemarker:false
+    },
+    edit:{
+      featureGroup:drawnItems,
+      edit:false,
+      remove:false
+    }
+  });
+
   map.addControl(drawControl);
+  return drawControl;
+}
+
+async function startDesktopDraw(){
+  if(isTouchDevice || IS_PARENT_PAGE) return;
+
+  const button = document.getElementById("desktopDrawStartButton");
+  if(button){
+    button.disabled = true;
+    button.textContent = "準備中…";
+  }
+
+  try{
+    // 全市境界とLeaflet Drawを同時に取得する
+    await Promise.all([
+      ensureAllCityFeaturesLoaded(),
+      loadLeafletDraw()
+    ]);
+
+    createLeafletDrawControl();
+    document.getElementById("desktopDrawStart").style.display = "none";
+
+    // 追加されたLeaflet Drawの「エリアを作図」を自動で開始
+    setTimeout(() => {
+      const polygonButton = document.querySelector(".leaflet-draw-draw-polygon");
+      if(polygonButton){
+        polygonButton.click();
+      }
+    }, 0);
+
+  }catch(error){
+    console.error("作図準備に失敗しました", error);
+    alert("作図機能の準備に失敗しました。通信環境を確認してもう一度お試しください。");
+
+    if(button){
+      button.disabled = false;
+      button.textContent = "✎　エリアを作図";
+    }
+  }
 }
 
 if(isTouchDevice && !IS_PARENT_PAGE){
   document.getElementById("mobileDrawStart").style.display = "block";
-  document.getElementById("mobileDrawPanel").style.display = "none";
-  document.getElementById("mapCenterCross").style.display = "none";
+  document.getElementById("desktopDrawStart").style.display = "none";
+}else if(!IS_PARENT_PAGE){
+  document.getElementById("mobileDrawStart").style.display = "none";
+  document.getElementById("desktopDrawStart").style.display = "block";
 }else{
   document.getElementById("mobileDrawStart").style.display = "none";
-  document.getElementById("mobileDrawPanel").style.display = "none";
-  document.getElementById("mapCenterCross").style.display = "none";
-
-if(IS_PARENT_PAGE){
+  document.getElementById("desktopDrawStart").style.display = "none";
   document.getElementById("parentLinkPanel").style.display = "none";
 }
-}
+
+document.getElementById("mobileDrawPanel").style.display = "none";
+document.getElementById("mapCenterCross").style.display = "none";
 
 // =========================
 // 初期読み込み
 // =========================
-fetchInitialJson("aichi.geojson")
+getInitialBoundaryData()
   .then(data => {
 
-    // ポイントの所属市町村判定に使うため、
-    // 愛知県全域の境界データを保持する
-    allCityFeatures = data.features.filter(f =>
+    // 市ページでは最初からその市だけのGeoJSONを取得する。
+    // 愛知県全域データは作図開始時まで読み込まない。
+    const filteredFeatures = data.features.filter(f =>
       f.properties.N03_004 &&
       f.properties.N03_004 !== "所属未定地"
     );
-
-    const filteredFeatures = IS_PARENT_PAGE
-      ? allCityFeatures
-      : allCityFeatures.filter(f =>
-          f.properties.N03_004 === CURRENT_CITY
-        );
 
     console.log("CURRENT_CITY:", CURRENT_CITY);
     console.log("IS_PARENT_PAGE:", IS_PARENT_PAGE);
@@ -2089,11 +2276,7 @@ fetchInitialJson("aichi.geojson")
     );
   });
 
-fetchInitialJson(
-  SCRIPT_URL +
-  "?city=" +
-  encodeURIComponent(CURRENT_CITY)
-)
+getInitialAreaData()
   .then(json => {
     renderAdminHistory(json.areas);
 
@@ -2718,8 +2901,32 @@ showAreaDetailPopup(
 // =========================
 // スマホ中央ポイント作図
 // =========================
-function startMobileDraw(){
+async function startMobileDraw(){
   if(!isTouchDevice) return;
+
+  const button = document.getElementById("mobileDrawStartButton");
+  if(button){
+    button.disabled = true;
+    button.textContent = "準備中…";
+  }
+
+  try{
+    // 市またぎ判定に必要な愛知県全域境界は、作図する人だけここで取得
+    await ensureAllCityFeaturesLoaded();
+  }catch(error){
+    console.error("市町村境界データの読込みに失敗しました", error);
+    alert("作図に必要な市町村境界データを読み込めませんでした。通信環境を確認してもう一度お試しください。");
+    if(button){
+      button.disabled = false;
+      button.textContent = "エリアを作図";
+    }
+    return;
+  }
+
+  if(button){
+    button.disabled = false;
+    button.textContent = "エリアを作図";
+  }
 
   mobileDrawing = true;
   mobilePoints = [];
@@ -2834,7 +3041,7 @@ async function finishMobileDraw(){
   saveNewArea(geo, layer, formData);
 }
 
-function restoreTransferredDraw(){
+async function restoreTransferredDraw(){
 
   const savedData =
     sessionStorage.getItem(TRANSFER_DRAW_KEY);
@@ -2904,11 +3111,20 @@ function restoreTransferredDraw(){
     }
   );
 
+  // 市またぎ作図の続きなので、判定用の愛知県全域境界もここで準備する
+  try{
+    await ensureAllCityFeaturesLoaded();
+  }catch(error){
+    console.error("市町村境界データの読込みに失敗しました", error);
+    alert("作図の復元に必要な市町村境界データを読み込めませんでした。");
+    return;
+  }
+
   // 通常の作図完了と同じ処理へ渡す
   setTimeout(() => {
 
     map.fire(
-      L.Draw.Event.CREATED,
+      "draw:created",
       {
         layer:restoredLayer,
         layerType:"polygon"
@@ -3246,7 +3462,7 @@ function previewAreaChoiceById(id){
   areaChoicePreviewActive = true;
 
   map.fitBounds(layer.getBounds(), {
-    padding:[60, 60],
+    padding:isTouchDevice ? [95, 95] : [140, 140],
     animate:false
   });
 
