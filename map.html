@@ -3672,18 +3672,19 @@ getInitialAreaData()
 
     showUpdateError();
 
-    /*
-      前回データが表示できているなら、
-      通信失敗でも地図表示は維持
-    */
-    if(cachedAreaData){
+  if(cachedAreaData){
 
-      console.warn(
-        "前回取得した配布エリアを表示しています"
-      );
+    console.warn(
+      "前回取得した配布エリアを表示しています"
+    );
 
-      return;
-    }
+    showInitialLoadError(
+      "最新情報を取得できませんでした。<br>" +
+      "現在は前回取得した情報を表示しています。"
+    );
+
+    return;
+  }
 
     document.getElementById(
       "adminHistoryContent"

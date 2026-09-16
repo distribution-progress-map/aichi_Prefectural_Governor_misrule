@@ -3425,20 +3425,21 @@ getInitialAreaData()
       error
     );
 
-    showUpdateError();
+  showUpdateError();
+    
+  if(cachedAreaData){
 
-    /*
-      前回データを表示できているなら
-      そのまま利用する
-    */
-    if(cachedAreaData){
+    console.warn(
+      "前回取得した配布エリアを表示しています"
+    );
 
-      console.warn(
-        "前回取得した配布エリアを表示しています"
-      );
+    showInitialLoadError(
+      "最新情報を取得できませんでした。<br>" +
+      "現在は前回取得した情報を表示しています。"
+    );
 
-      return;
-    }
+    return;
+  }
 
     document.getElementById(
       "adminHistoryContent"
