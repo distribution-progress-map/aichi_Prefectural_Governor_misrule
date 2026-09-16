@@ -756,6 +756,237 @@ body{
   overflow-y:auto;
 }
 
+/* 最新情報更新メッセージ */
+.update-status{
+  position:absolute;
+  top:58px;
+  left:50%;
+  transform:translateX(-50%);
+
+  z-index:1800;
+
+  padding:5px 10px;
+
+  background:rgba(255,255,255,.92);
+  color:#666;
+
+  border:1px solid #ddd;
+  border-radius:999px;
+
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+
+  font-size:12px;
+  font-weight:bold;
+
+  white-space:nowrap;
+
+  opacity:1;
+  transition:
+    opacity .4s ease,
+    transform .4s ease;
+}
+
+.update-status.done{
+  color:#1565c0;
+  border-color:#90caf9;
+  background:rgba(239,248,255,.96);
+}
+
+.update-status.error{
+  color:#b71c1c;
+  border-color:#ef9a9a;
+  background:rgba(255,245,245,.95);
+}
+
+.update-status.hide{
+  opacity:0;
+  transform:translate(-50%, -5px);
+  pointer-events:none;
+}
+
+/* =========================
+   配布対象チラシ
+========================= */
+
+/* タイトル横の小さいチラシ */
+.flyer-thumbnail{
+  display:none;
+  position:absolute;
+  z-index:1900;
+
+  padding:0;
+  margin:0;
+
+  border:2px solid white;
+  border-radius:5px;
+
+  background:white;
+
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+
+  overflow:hidden;
+  cursor:pointer;
+
+  opacity:0;
+  transform:scale(.8);
+
+  transition:
+    opacity .25s ease,
+    transform .25s ease;
+}
+
+.flyer-thumbnail.visible{
+  display:block;
+  opacity:1;
+  transform:scale(1);
+}
+
+.flyer-thumbnail img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+
+/* 大きなチラシ表示 */
+.flyer-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+
+  z-index:50000;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:20px;
+  box-sizing:border-box;
+
+  background:rgba(0,0,0,.55);
+
+  opacity:0;
+
+  transition:opacity .25s ease;
+}
+
+.flyer-overlay.open{
+  display:flex;
+}
+
+.flyer-overlay.visible{
+  opacity:1;
+}
+
+
+.flyer-card{
+  position:relative;
+
+  max-width:min(520px, 88vw);
+  max-height:88vh;
+
+  padding:42px 12px 12px;
+
+  box-sizing:border-box;
+
+  background:white;
+
+  border-radius:14px;
+
+  box-shadow:
+    0 10px 35px rgba(0,0,0,.4);
+
+  transform:scale(.94);
+  opacity:0;
+
+  transition:
+    transform .45s cubic-bezier(.2,.8,.2,1),
+    opacity .3s ease;
+}
+
+.flyer-overlay.visible .flyer-card{
+  transform:scale(1);
+  opacity:1;
+}
+
+
+/* 閉じる時にタイトル横へ吸い込まれる */
+.flyer-card.flyer-closing{
+  transform:
+    translate(
+      var(--flyer-dx, 0px),
+      var(--flyer-dy, 0px)
+    )
+    scale(
+      var(--flyer-scale, .1)
+    );
+
+  opacity:.25;
+}
+
+
+.flyer-main-image{
+  display:block;
+
+  max-width:100%;
+  max-height:calc(88vh - 65px);
+
+  margin:auto;
+
+  object-fit:contain;
+
+  border-radius:5px;
+}
+
+
+.flyer-guide{
+  position:absolute;
+
+  top:12px;
+  left:18px;
+  right:55px;
+
+  color:#555;
+
+  font-size:13px;
+  font-weight:bold;
+
+  text-align:center;
+
+  white-space:nowrap;
+}
+
+
+.flyer-close-button{
+  position:absolute;
+
+  top:8px;
+  right:8px;
+
+  width:30px;
+  height:30px;
+
+  padding:0;
+
+  border:0;
+  border-radius:50%;
+
+  background:#eeeeee;
+  color:#444;
+
+  font-size:22px;
+  line-height:30px;
+
+  cursor:pointer;
+}
+
+
+.flyer-close-button:hover{
+  background:#dddddd;
+}
+
+
+
 @media (min-width:601px){
   .desktop-draw-start{ display:block; }
 }
@@ -1108,7 +1339,40 @@ body{
     transform-origin:bottom left;
   }
 
- 
+ .flyer-overlay{
+    padding:12px;
+  }
+
+  .flyer-card{
+    max-width:92vw;
+    max-height:90vh;
+
+    padding:
+      38px
+      8px
+      8px;
+  }
+
+  .flyer-main-image{
+    max-height:
+      calc(90vh - 55px);
+  }
+
+  .flyer-guide{
+    top:10px;
+    left:10px;
+    right:45px;
+
+    font-size:11px;
+  }
+
+  .flyer-close-button{
+    width:27px;
+    height:27px;
+
+    font-size:20px;
+    line-height:27px;
+  }
 
 
 }
@@ -1260,6 +1524,10 @@ body{
 
   .leaflet-draw-draw-polygon::after{
     content:"✎　エリアを作図";
+  }
+
+  .update-status{
+    top:72px;
   }
 
 }
@@ -1645,6 +1913,12 @@ body{
 
     scroll-padding-top:15px;
     scroll-padding-bottom:220px;
+  }
+
+  .update-status{
+    top:42px;
+    font-size:10px;
+    padding:4px 8px;
   }
 
 }
@@ -2156,6 +2430,46 @@ body{
 
 <div class="panel title" id="titleBox">読み込み中...</div>
 
+<div id="updateStatus" class="update-status">
+  最新情報に更新中です…
+</div>
+
+<!-- チラシ確認 -->
+<button
+  id="flyerThumbnail"
+  class="flyer-thumbnail"
+  type="button"
+  title="配布対象のチラシを見る"
+  aria-label="配布対象のチラシを見る"
+>
+  <img src="flyer.jpg" alt="配布対象チラシ">
+</button>
+
+<div id="flyerOverlay" class="flyer-overlay" aria-hidden="true">
+
+  <div id="flyerCard" class="flyer-card">
+
+    <button
+      id="flyerCloseButton"
+      class="flyer-close-button"
+      type="button"
+      aria-label="チラシを閉じる"
+    >×</button>
+
+    <div class="flyer-guide">
+      このチラシの配布エリア共有マップです
+    </div>
+
+    <img
+      src="flyer.jpg"
+      class="flyer-main-image"
+      alt="配布対象チラシ"
+    >
+
+  </div>
+
+</div>
+
 <div class="panel contact-panel">
   <button onclick="openContactForm()">管理者へ連絡</button>
 </div>
@@ -2335,6 +2649,640 @@ async function getInitialAreaData(){
   return early || fetchInitialJson(
     SCRIPT_URL + "?city=" + encodeURIComponent(CURRENT_CITY)
   );
+}
+
+/* =========================
+   市町村ページ用ブラウザキャッシュ
+========================= */
+
+const AREA_BROWSER_CACHE_KEY =
+  "aichiMap_mapAreaCache_v1_" +
+  CURRENT_CITY;
+
+/* 最大7日間、前回データを先行表示に利用 */
+const AREA_BROWSER_CACHE_MAX_AGE =
+  7 * 24 * 60 * 60 * 1000;
+
+
+function saveAreaBrowserCache(json){
+
+  try{
+
+    if(
+      !json ||
+      !Array.isArray(json.areas)
+    ){
+      return;
+    }
+
+    localStorage.setItem(
+      AREA_BROWSER_CACHE_KEY,
+      JSON.stringify({
+        savedAt:Date.now(),
+        data:json
+      })
+    );
+
+  }catch(error){
+
+    console.warn(
+      "ブラウザキャッシュの保存をスキップしました",
+      error
+    );
+
+  }
+}
+
+
+function loadAreaBrowserCache(){
+
+  try{
+
+    const text =
+      localStorage.getItem(
+        AREA_BROWSER_CACHE_KEY
+      );
+
+    if(!text){
+      return null;
+    }
+
+    const cache = JSON.parse(text);
+
+    if(
+      !cache ||
+      !cache.savedAt ||
+      !cache.data ||
+      !Array.isArray(cache.data.areas)
+    ){
+      localStorage.removeItem(
+        AREA_BROWSER_CACHE_KEY
+      );
+
+      return null;
+    }
+
+    if(
+      Date.now() - cache.savedAt >
+      AREA_BROWSER_CACHE_MAX_AGE
+    ){
+      localStorage.removeItem(
+        AREA_BROWSER_CACHE_KEY
+      );
+
+      return null;
+    }
+
+    return cache.data;
+
+  }catch(error){
+
+    try{
+      localStorage.removeItem(
+        AREA_BROWSER_CACHE_KEY
+      );
+    }catch(e){}
+
+    return null;
+  }
+}
+
+function showUpdatingStatus(){
+
+  const status =
+    document.getElementById(
+      "updateStatus"
+    );
+
+  if(!status) return;
+
+  status.className =
+    "update-status";
+
+  status.textContent =
+    "最新情報に更新中です…";
+}
+
+/* =========================
+   配布対象チラシ表示
+========================= */
+
+/*
+  自動で大きく表示する頻度：
+  24時間に1回
+*/
+const FLYER_AUTO_SHOW_INTERVAL =
+  24 * 60 * 60 * 1000;
+
+
+/*
+  チラシを変更した時は
+  v1 → v2 のように変更する。
+
+  そうすると全利用者に
+  新しいチラシが再表示される。
+*/
+const FLYER_VIEW_KEY =
+  "aichiMap_flyerView_202609_v1";
+
+
+function positionFlyerThumbnail(){
+
+  const title =
+    document.getElementById(
+      "titleBox"
+    );
+
+  const thumb =
+    document.getElementById(
+      "flyerThumbnail"
+    );
+
+  if(!title || !thumb){
+    return;
+  }
+
+  const rect =
+    title.getBoundingClientRect();
+
+  /*
+    タイトルとほぼ同じ高さ
+  */
+  const height =
+    Math.max(
+      24,
+      Math.round(rect.height)
+    );
+
+  const width =
+    Math.round(
+      height * .72
+    );
+
+  thumb.style.height =
+    height + "px";
+
+  thumb.style.width =
+    width + "px";
+
+
+  /*
+    基本はタイトルの右横
+  */
+  let left =
+    rect.right + 8;
+
+  /*
+    画面からはみ出す場合だけ
+    右端に収める
+  */
+  const maxLeft =
+    window.innerWidth -
+    width -
+    6;
+
+  if(left > maxLeft){
+    left = maxLeft;
+  }
+
+  thumb.style.left =
+    left + "px";
+
+  thumb.style.top =
+    (
+      rect.top +
+      (rect.height - height) / 2
+    ) + "px";
+}
+
+
+function showFlyerThumbnail(){
+
+  const thumb =
+    document.getElementById(
+      "flyerThumbnail"
+    );
+
+  if(!thumb) return;
+
+  positionFlyerThumbnail();
+
+  thumb.classList.add(
+    "visible"
+  );
+}
+
+
+function hideFlyerThumbnail(){
+
+  const thumb =
+    document.getElementById(
+      "flyerThumbnail"
+    );
+
+  if(!thumb) return;
+
+  thumb.classList.remove(
+    "visible"
+  );
+}
+
+
+function openFlyerPreview(){
+
+  const overlay =
+    document.getElementById(
+      "flyerOverlay"
+    );
+
+  const card =
+    document.getElementById(
+      "flyerCard"
+    );
+
+  if(!overlay || !card){
+    return;
+  }
+
+  hideFlyerThumbnail();
+
+  card.classList.remove(
+    "flyer-closing"
+  );
+
+  card.style.removeProperty(
+    "--flyer-dx"
+  );
+
+  card.style.removeProperty(
+    "--flyer-dy"
+  );
+
+  card.style.removeProperty(
+    "--flyer-scale"
+  );
+
+  overlay.classList.add(
+    "open"
+  );
+
+  overlay.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  requestAnimationFrame(
+    function(){
+
+      requestAnimationFrame(
+        function(){
+
+          overlay.classList.add(
+            "visible"
+          );
+
+        }
+      );
+
+    }
+  );
+}
+
+
+function closeFlyerPreview(){
+
+  const overlay =
+    document.getElementById(
+      "flyerOverlay"
+    );
+
+  const card =
+    document.getElementById(
+      "flyerCard"
+    );
+
+  const thumb =
+    document.getElementById(
+      "flyerThumbnail"
+    );
+
+  if(
+    !overlay ||
+    !card ||
+    !thumb
+  ){
+    return;
+  }
+
+
+  /*
+    まずタイトル横の
+    最終位置を計算
+  */
+  positionFlyerThumbnail();
+
+
+  const cardRect =
+    card.getBoundingClientRect();
+
+  const thumbRect =
+    thumb.getBoundingClientRect();
+
+
+  /*
+    大きなチラシの中心 →
+    サムネイルの中心
+  */
+  const dx =
+    (
+      thumbRect.left +
+      thumbRect.width / 2
+    ) -
+    (
+      cardRect.left +
+      cardRect.width / 2
+    );
+
+  const dy =
+    (
+      thumbRect.top +
+      thumbRect.height / 2
+    ) -
+    (
+      cardRect.top +
+      cardRect.height / 2
+    );
+
+
+  const scale =
+    Math.min(
+      thumbRect.width /
+        cardRect.width,
+
+      thumbRect.height /
+        cardRect.height
+    );
+
+
+  card.style.setProperty(
+    "--flyer-dx",
+    dx + "px"
+  );
+
+  card.style.setProperty(
+    "--flyer-dy",
+    dy + "px"
+  );
+
+  card.style.setProperty(
+    "--flyer-scale",
+    scale
+  );
+
+
+  card.classList.add(
+    "flyer-closing"
+  );
+
+
+  /*
+    自動表示した日時を保存
+  */
+  try{
+
+    localStorage.setItem(
+      FLYER_VIEW_KEY,
+      String(Date.now())
+    );
+
+  }catch(error){
+
+    console.warn(
+      "チラシ表示日時を保存できませんでした",
+      error
+    );
+
+  }
+
+
+  /*
+    シュッと縮小した後、
+    小さいチラシに切り替える
+  */
+  setTimeout(function(){
+
+    overlay.classList.remove(
+      "visible",
+      "open"
+    );
+
+    overlay.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    card.classList.remove(
+      "flyer-closing"
+    );
+
+    showFlyerThumbnail();
+
+  }, 450);
+}
+
+
+function shouldAutoShowFlyer(){
+
+  try{
+
+    const lastShown =
+      Number(
+        localStorage.getItem(
+          FLYER_VIEW_KEY
+        )
+      );
+
+    if(!lastShown){
+      return true;
+    }
+
+    return (
+      Date.now() -
+      lastShown
+    ) >=
+      FLYER_AUTO_SHOW_INTERVAL;
+
+  }catch(error){
+
+    /*
+      localStorageが使えない場合も
+      サイト自体は止めない
+    */
+    return true;
+  }
+}
+
+
+function initFlyerPreview(){
+
+  const thumb =
+    document.getElementById(
+      "flyerThumbnail"
+    );
+
+  const closeButton =
+    document.getElementById(
+      "flyerCloseButton"
+    );
+
+  if(
+    !thumb ||
+    !closeButton
+  ){
+    return;
+  }
+
+
+  thumb.addEventListener(
+    "click",
+    openFlyerPreview
+  );
+
+
+  closeButton.addEventListener(
+    "click",
+    closeFlyerPreview
+  );
+
+
+  /*
+    タイトルサイズに合わせて
+    サムネイル位置を調整
+  */
+  positionFlyerThumbnail();
+
+
+  window.addEventListener(
+    "resize",
+    positionFlyerThumbnail
+  );
+
+
+  /*
+    「読み込み中...」から
+    正式タイトルに変わった時にも
+    自動で位置を合わせる
+  */
+  const title =
+    document.getElementById(
+      "titleBox"
+    );
+
+  if(
+    title &&
+    window.ResizeObserver
+  ){
+
+    const observer =
+      new ResizeObserver(
+        positionFlyerThumbnail
+      );
+
+    observer.observe(title);
+  }
+
+
+  /*
+    24時間経っていれば
+    起動時に大きく表示。
+
+    それ以外は最初から
+    タイトル横へ。
+  */
+  if(
+    shouldAutoShowFlyer()
+  ){
+
+    setTimeout(
+      openFlyerPreview,
+      600
+    );
+
+  }else{
+
+    showFlyerThumbnail();
+
+  }
+}
+
+
+/*
+  HTML準備完了後に開始
+*/
+if(
+  document.readyState ===
+  "loading"
+){
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initFlyerPreview
+  );
+
+}else{
+
+  initFlyerPreview();
+
+}
+
+
+function showUpdateComplete(){
+
+  const status =
+    document.getElementById(
+      "updateStatus"
+    );
+
+  if(!status) return;
+
+  status.className =
+    "update-status done";
+
+  status.textContent =
+    "更新完了！";
+
+  setTimeout(function(){
+
+    status.classList.add(
+      "hide"
+    );
+
+  }, 3000);
+}
+
+
+function showUpdateError(){
+
+  const status =
+    document.getElementById(
+      "updateStatus"
+    );
+
+  if(!status) return;
+
+  status.className =
+    "update-status error";
+
+  status.textContent =
+    "最新情報を取得できませんでした";
+
+  setTimeout(function(){
+
+    status.classList.add(
+      "hide"
+    );
+
+  }, 5000);
 }
 
 let initialLoadErrorShown = false;
@@ -2673,48 +3621,187 @@ getInitialBoundaryData()
     );
   });
 
+/* =========================
+   配布エリア初期表示
+========================= */
+
+/* 前回のこの市のデータがあれば先に表示 */
+const cachedAreaData =
+  loadAreaBrowserCache();
+
+if(cachedAreaData){
+
+  renderAreaData(
+    cachedAreaData
+  );
+
+}
+
+showUpdatingStatus();
+
+/* 裏で最新版を取得 */
 getInitialAreaData()
   .then(json => {
-    renderAdminHistory(json.areas);
 
-    const planned = [];
-    const done = [];
+    /*
+      前回表示を消して
+      最新版に入れ替える
+    */
+    renderAreaData(json);
 
-    json.areas.forEach(row => {
-      if(!row) return;
-      if(!row["ID"]) return;
-      if(!row["種類"]) return;
-      if(!row["図形データ"]) return;
-
-      let geo;
-
-      try {
-        geo = JSON.parse(row["図形データ"]);
-      } catch(e) {
-        console.warn("図形データの読み込みをスキップしました", row["ID"], e);
-        return;
-      }
-
-      if(row["種類"] === "配布予定") planned.push({ geo, row });
-      if(row["種類"] === "配布済") done.push({ geo, row });
-    });
-
-    planned.forEach(drawLayer);
-    done.forEach(drawLayer);
+    /* 次回表示用に保存 */
+    saveAreaBrowserCache(json);
 
     areaDataReady = true;
+
+    /*
+      indexからエリアを指定して
+      市ページへ来た場合の復元
+    */
     restoreSelectedAreaFromIndex();
+
+    showUpdateComplete();
+
   })
   .catch(function(error){
-    console.error("配布エリアデータの読込みに失敗しました", error);
 
-    document.getElementById("adminHistoryContent").textContent =
+    console.error(
+      "配布エリアデータの読込みに失敗しました",
+      error
+    );
+
+    showUpdateError();
+
+    /*
+      前回データが表示できているなら、
+      通信失敗でも地図表示は維持
+    */
+    if(cachedAreaData){
+
+      console.warn(
+        "前回取得した配布エリアを表示しています"
+      );
+
+      return;
+    }
+
+    document.getElementById(
+      "adminHistoryContent"
+    ).textContent =
       "データを取得できませんでした";
 
     showInitialLoadError(
       "配布エリアデータを読み込めませんでした。"
     );
+
   });
+
+function clearAreaLayers(){
+
+  /*
+    作図済みエリアだけを消す。
+    作図中のデータまで消さないよう、
+    drawnItems.clearLayers() は使わない。
+  */
+  Object.keys(areaLayersById)
+    .forEach(id => {
+
+      const layer =
+        areaLayersById[id];
+
+      if(layer){
+        drawnItems.removeLayer(layer);
+      }
+
+    });
+
+  Object.keys(plannedItemsById)
+    .forEach(id =>
+      delete plannedItemsById[id]
+    );
+
+  Object.keys(areaItemsById)
+    .forEach(id =>
+      delete areaItemsById[id]
+    );
+
+  Object.keys(areaLayersById)
+    .forEach(id =>
+      delete areaLayersById[id]
+    );
+
+  selectedAreaLayer = null;
+}
+
+
+function renderAreaData(json){
+
+  if(
+    !json ||
+    !Array.isArray(json.areas)
+  ){
+    return;
+  }
+
+  clearAreaLayers();
+
+  renderAdminHistory(
+    json.areas
+  );
+
+  const planned = [];
+  const done = [];
+
+  json.areas.forEach(row => {
+
+    if(!row) return;
+    if(!row["ID"]) return;
+    if(!row["種類"]) return;
+    if(!row["図形データ"]) return;
+
+    let geo;
+
+    try{
+
+      geo =
+        JSON.parse(
+          row["図形データ"]
+        );
+
+    }catch(error){
+
+      console.warn(
+        "図形データの読み込みをスキップしました",
+        row["ID"],
+        error
+      );
+
+      return;
+    }
+
+    if(row["種類"] === "配布予定"){
+
+      planned.push({
+        geo:geo,
+        row:row
+      });
+
+    }
+
+    if(row["種類"] === "配布済"){
+
+      done.push({
+        geo:geo,
+        row:row
+      });
+
+    }
+
+  });
+
+  planned.forEach(drawLayer);
+  done.forEach(drawLayer);
+}
 
 // =========================
 // 地図・描画
