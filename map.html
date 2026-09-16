@@ -2652,6 +2652,126 @@ async function getInitialAreaData(){
 }
 
 /* =========================
+   ブラウザ復帰時の最新情報更新
+========================= */
+
+const AREA_REFRESH_INTERVAL =
+  60 * 60 * 1000; // 1時間
+
+let lastAreaRefreshAt =
+  Date.now();
+
+let areaRefreshInProgress =
+  false;
+
+let desktopDrawing =
+  false;
+
+
+/*
+  初期表示用Promiseを使わず、
+  必ずApps Scriptへ最新版を取りに行く
+*/
+function getFreshAreaData(){
+
+  return fetchInitialJson(
+    SCRIPT_URL +
+    "?city=" +
+    encodeURIComponent(
+      CURRENT_CITY
+    )
+  );
+
+}
+
+
+async function refreshAreaDataIfNeeded(){
+
+  if(areaRefreshInProgress){
+    return;
+  }
+
+
+  /*
+    作図中は勝手に更新しない
+  */
+  if(
+    mobileDrawing ||
+    desktopDrawing
+  ){
+    return;
+  }
+
+
+  if(
+    Date.now() -
+    lastAreaRefreshAt <
+    AREA_REFRESH_INTERVAL
+  ){
+    return;
+  }
+
+
+  areaRefreshInProgress = true;
+
+  showUpdatingStatus();
+
+  try{
+
+    const json =
+      await getFreshAreaData();
+
+    renderAreaData(json);
+
+    saveAreaBrowserCache(json);
+
+    areaDataReady = true;
+
+    lastAreaRefreshAt =
+      Date.now();
+
+    showUpdateComplete();
+
+  }catch(error){
+
+    console.error(
+      "最新情報の再取得に失敗しました",
+      error
+    );
+
+    showUpdateError();
+
+    showInitialLoadError(
+      "最新情報を取得できませんでした。<br>" +
+      "ページを再読み込みして最新情報を取得します。"
+    );
+
+  }finally{
+
+    areaRefreshInProgress = false;
+
+  }
+
+}
+
+
+document.addEventListener(
+  "visibilitychange",
+  function(){
+
+    if(
+      document.visibilityState ===
+      "visible"
+    ){
+
+      refreshAreaDataIfNeeded();
+
+    }
+
+  }
+);
+
+/* =========================
    市町村ページ用ブラウザキャッシュ
 ========================= */
 
@@ -3312,6 +3432,28 @@ const INITIAL_MAP_ZOOM = 8;
 const map = L.map("map", { zoomControl:false }).setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
 
 
+/*
+  PCのLeaflet Draw作図状態
+*/
+map.on(
+  "draw:drawstart",
+  function(){
+
+    desktopDrawing = true;
+
+  }
+);
+
+map.on(
+  "draw:drawstop",
+  function(){
+
+    desktopDrawing = false;
+
+  }
+);
+
+
 // 市境界の半透明塗りつぶし用：低い階層
 map.createPane("cityBoundaryPane");
 map.getPane("cityBoundaryPane").style.zIndex = 350;
@@ -3654,10 +3796,8 @@ getInitialAreaData()
 
     areaDataReady = true;
 
-    /*
-      indexからエリアを指定して
-      市ページへ来た場合の復元
-    */
+    lastAreaRefreshAt = Date.now();
+
     restoreSelectedAreaFromIndex();
 
     showUpdateComplete();

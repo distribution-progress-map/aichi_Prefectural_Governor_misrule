@@ -2540,6 +2540,112 @@ async function getInitialAreaData(){
   return early || fetchInitialJson(SCRIPT_URL);
 }
 
+
+
+/* =========================
+   ブラウザ復帰時の最新情報更新
+========================= */
+
+const AREA_REFRESH_INTERVAL =
+  60 * 60 * 1000; // 1時間
+
+let lastAreaRefreshAt =
+  Date.now();
+
+let areaRefreshInProgress =
+  false;
+
+
+/*
+  初期表示用Promiseを使わず、
+  必ずApps Scriptへ最新版を取りに行く
+*/
+function getFreshAreaData(){
+
+  return fetchInitialJson(
+    SCRIPT_URL
+  );
+
+}
+
+
+async function refreshAreaDataIfNeeded(){
+
+  if(areaRefreshInProgress){
+    return;
+  }
+
+  if(
+    Date.now() -
+    lastAreaRefreshAt <
+    AREA_REFRESH_INTERVAL
+  ){
+    return;
+  }
+
+
+  areaRefreshInProgress = true;
+
+  showUpdatingStatus();
+
+  try{
+
+    const json =
+      await getFreshAreaData();
+
+    renderAreaData(json);
+
+    saveAreaBrowserCache(json);
+
+    areaSearchDataReady = true;
+
+    lastAreaRefreshAt =
+      Date.now();
+
+    showUpdateComplete();
+
+  }catch(error){
+
+    console.error(
+      "最新情報の再取得に失敗しました",
+      error
+    );
+
+    showUpdateError();
+
+    showInitialLoadError(
+      "最新情報を取得できませんでした。<br>" +
+      "ページを再読み込みして最新情報を取得します。"
+    );
+
+  }finally{
+
+    areaRefreshInProgress = false;
+
+  }
+
+}
+
+
+/*
+  Safari / Chromeへ戻ってきた時に確認
+*/
+document.addEventListener(
+  "visibilitychange",
+  function(){
+
+    if(
+      document.visibilityState ===
+      "visible"
+    ){
+
+      refreshAreaDataIfNeeded();
+
+    }
+
+  }
+);
+
 /* =========================
    ブラウザ側の配布エリアキャッシュ
 ========================= */
@@ -3414,6 +3520,8 @@ getInitialAreaData()
     saveAreaBrowserCache(json);
 
     areaSearchDataReady = true;
+
+    lastAreaRefreshAt = Date.now();
 
     showUpdateComplete();
 
