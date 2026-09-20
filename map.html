@@ -629,6 +629,58 @@ body{
   border-width:1.5px;
 }
 
+/* =========================
+   現在地表示
+========================= */
+
+.current-location-panel{
+  left:20px;
+  top:10px;
+
+  width:175px;
+  padding:7px 8px;
+
+  z-index:1700;
+
+  box-sizing:border-box;
+  text-align:center;
+}
+
+.current-location-panel button{
+  width:100%;
+
+  padding:7px 5px;
+
+  border:1px solid #aaa;
+  border-radius:6px;
+
+  background:#ffffff;
+  color:#333;
+
+  font-size:13px;
+  font-weight:bold;
+
+  cursor:pointer;
+}
+
+.current-location-panel button:hover{
+  background:#f3f8ff;
+}
+
+.current-location-panel button:disabled{
+  opacity:.65;
+  cursor:wait;
+}
+
+.current-location-note{
+  margin-top:5px;
+
+  color:#666;
+
+  font-size:9px;
+  line-height:1.4;
+}
+
 /* ズームボタンを「全体表示に戻る」の上へ。＋－ボタン */
 .leaflet-bottom.leaflet-left{
   bottom:110px;
@@ -1140,6 +1192,26 @@ body{
     padding:3px 6px;
   }
 
+   .current-location-panel{
+    left:6px; 
+    top:100px;
+    bottom:auto; 
+
+    width:155px;
+
+    padding:5px 6px;
+  }
+
+  .current-location-panel button{
+    font-size:11px !important;
+    padding:5px 4px;
+  }
+
+  .current-location-note{
+    font-size:8px;
+    line-height:1.35;
+  }
+
   .leaflet-bottom.leaflet-left{
     bottom:10px;
     left:6px;
@@ -1463,7 +1535,7 @@ body{
     /* 初期表示と作図中のボタンを完全に固定 */
   .desktop-draw-start{
     left:20px;
-    top:90px;
+    top:100px;
     width:170px;
     height:50px;
   }
@@ -2562,6 +2634,21 @@ body{
   <button onclick="goParentPage()">愛知県全体へ戻る</button>
 </div>
 
+<div class="panel current-location-panel">
+  <button
+    id="currentLocationButton"
+    type="button"
+    onclick="requestCurrentLocation()"
+  >
+    📍 現在地を取得
+  </button>
+
+  <div class="current-location-note">
+    現在地はこの端末上でのみ表示され、<br>
+    サイトには保存・共有されません。
+  </div>
+</div>
+
 <script>
 const SCRIPT_URL = window.MAP_SCRIPT_URL;
 
@@ -3476,6 +3563,254 @@ L.control.zoom({ position:"bottomleft" }).addTo(map);
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution:"©OpenStreetMap"
 }).addTo(map);
+
+/* =========================
+   現在地表示
+========================= */
+
+/*
+  現在地はブラウザ上だけで保持する。
+  Apps Script・localStorage・URLには保存しない。
+*/
+
+map.createPane("currentLocationPane");
+
+map.getPane(
+  "currentLocationPane"
+).style.zIndex = 700;
+
+map.getPane(
+  "currentLocationPane"
+).style.pointerEvents = "none";
+
+
+let currentLocationMarker = null;
+let currentLocationAccuracyCircle = null;
+
+function requestCurrentLocation(){
+
+  /*
+    すでに一度現在地を取得できている場合は、
+    説明を出さずそのまま再取得
+  */
+  if(currentLocationMarker){
+
+    getCurrentLocation();
+    return;
+
+  }
+
+  openConfirm(
+    "現在地を地図に表示します。<br><br>" +
+    "現在地はこの端末上でのみ表示され、<br>" +
+    "サイトには保存・共有されません。<br><br>" +
+    "次に表示される確認で<br>" +
+    "<strong>「許可」</strong>を選んでください。",
+    function(){
+
+      getCurrentLocation();
+
+    },
+    null,
+    "やめる"
+  );
+
+}
+
+function getCurrentLocation(){
+
+  const button =
+    document.getElementById(
+      "currentLocationButton"
+    );
+
+
+  if(
+    !navigator.geolocation
+  ){
+
+    alert(
+      "この端末では現在地を取得できません。"
+    );
+
+    return;
+
+  }
+
+
+  if(button){
+
+    button.disabled = true;
+    button.textContent =
+      "📍 現在地を取得中…";
+
+  }
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    function(position){
+
+      const lat =
+        position.coords.latitude;
+
+      const lng =
+        position.coords.longitude;
+
+      const accuracy =
+        position.coords.accuracy;
+
+      const latlng =
+        L.latLng(lat, lng);
+
+
+      /*
+        すでに現在地が表示されていれば
+        新しく増やさず位置だけ更新
+      */
+      if(currentLocationMarker){
+
+        currentLocationMarker
+          .setLatLng(latlng);
+
+      }else{
+
+        currentLocationMarker =
+          L.circleMarker(
+            latlng,
+            {
+              pane:"currentLocationPane",
+              radius:7,
+              color:"#1565c0",
+              weight:3,
+              fillColor:"#2196f3",
+              fillOpacity:1,
+              interactive:false
+            }
+          )
+          .addTo(map);
+
+      }
+
+
+      /*
+        GPSの誤差範囲
+      */
+      if(
+        currentLocationAccuracyCircle
+      ){
+
+        currentLocationAccuracyCircle
+          .setLatLng(latlng)
+          .setRadius(accuracy);
+
+      }else{
+
+        currentLocationAccuracyCircle =
+          L.circle(
+            latlng,
+            {
+              pane:"currentLocationPane",
+              radius:accuracy,
+              color:"#2196f3",
+              weight:1,
+              opacity:.7,
+              fillColor:"#2196f3",
+              fillOpacity:.10,
+              interactive:false
+            }
+          )
+          .addTo(map);
+
+      }
+
+
+      /*
+        現在地が画面外、
+        または地図が広域表示なら
+        現在地まで移動して拡大
+      */
+      if(
+        !map.getBounds().contains(latlng) ||
+        map.getZoom() < 15
+      ){
+
+        map.setView(
+          latlng,
+          17,
+          {
+            animate:true
+          }
+        );
+
+      }
+
+
+      if(button){
+
+        button.disabled = false;
+
+        button.textContent =
+          "📍 現在地を更新";
+
+      }
+
+    },
+
+
+    function(error){
+
+      if(button){
+
+        button.disabled = false;
+
+        button.textContent =
+          "📍 現在地を取得";
+
+      }
+
+
+      if(
+        error.code ===
+        error.PERMISSION_DENIED
+      ){
+
+        alert(
+          "現在地の利用が許可されていません。\n" +
+          "ブラウザの位置情報設定を確認してください。"
+        );
+
+      }else if(
+        error.code ===
+        error.TIMEOUT
+      ){
+
+        alert(
+          "現在地の取得に時間がかかっています。\n" +
+          "もう一度お試しください。"
+        );
+
+      }else{
+
+        alert(
+          "現在地を取得できませんでした。\n" +
+          "通信環境や位置情報設定を確認してください。"
+        );
+
+      }
+
+    },
+
+
+    {
+      enableHighAccuracy:true,
+      timeout:10000,
+      maximumAge:0
+    }
+
+  );
+
+}
 
 const drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
