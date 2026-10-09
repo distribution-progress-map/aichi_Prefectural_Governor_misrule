@@ -1369,6 +1369,26 @@ body{
   text-align:center;
 }
 
+.activity-report-total{
+  margin-bottom:14px;
+  color:#333;
+  font-size:17px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.activity-report-total-count{
+  text-decoration:underline;
+  text-decoration-color:#f59e0b;
+  text-decoration-thickness:2px;
+  text-underline-offset:4px;
+}
+
+.activity-report-list{
+  border-top:1px solid #e5e5e5;
+  padding-top:9px;
+}
+
 
 @media (max-width:600px) and (pointer:coarse){
   .area-detail-popup{
@@ -1992,6 +2012,10 @@ body{
     margin-bottom:10px;
   }
    
+  .activity-report-total{
+    font-size:15px;
+    margin-bottom:12px;
+  }
 }
 
 
@@ -2582,6 +2606,11 @@ body{
       いつもありがとうございます！
     </div>
 
+    <div class="activity-report-total">
+      愛知県全域の配布完了枚数：
+      <span id="activityReportTotalCount" class="activity-report-total-count">0枚</span>
+    </div>
+
     <div
       id="activityReportList"
       class="activity-report-list"
@@ -3003,6 +3032,8 @@ const FLYER_VIEW_KEY =
 */
 let activityReportRows = [];
 
+let activityReportTotalCount = 0;
+
 
 /*
   スプレッドシートデータを
@@ -3174,11 +3205,18 @@ function prepareActivityReport(areas){
   ){
 
     activityReportRows = [];
+    activityReportTotalCount = 0;
 
     tryOpenActivityReportAfterFlyer();
 
     return;
   }
+
+  activityReportTotalCount = areas.reduce(function(total, row){
+    if(!row || row["種類"] !== "配布済") return total;
+    const count = getAreaCountNumber(row["枚数"]);
+    return count !== null && count >= 0 ? total + count : total;
+  }, 0);
 
 
   const now =
@@ -3309,6 +3347,11 @@ function prepareActivityReport(areas){
 
       });
 
+  const reportOverlay = document.getElementById("activityReportOverlay");
+  if(reportOverlay && reportOverlay.classList.contains("open")){
+    renderActivityReport();
+  }
+
 
   /*
     チラシをすでに閉じていて
@@ -3323,6 +3366,12 @@ function prepareActivityReport(areas){
 */
 function renderActivityReport(){
 
+  const totalElement = document.getElementById("activityReportTotalCount");
+  if(totalElement){
+    totalElement.textContent =
+      activityReportTotalCount.toLocaleString("ja-JP") + "枚";
+  }
+
   const list =
     document.getElementById(
       "activityReportList"
@@ -3334,7 +3383,7 @@ function renderActivityReport(){
 
 
   list.innerHTML =
-    activityReportRows
+    (activityReportRows.length ? activityReportRows
       .map(function(item){
 
         return (
@@ -3362,7 +3411,7 @@ function renderActivityReport(){
         );
 
       })
-      .join("");
+      .join("") : '<div class="activity-report-item">直近2週間の活動報告はありません。</div>');
 }
 
 
@@ -3370,14 +3419,6 @@ function renderActivityReport(){
   活動報告を開く
 */
 function openActivityReport(){
-
-  if(
-    !activityReportRows.length
-  ){
-    return;
-  }
-
-
   renderActivityReport();
 
 
@@ -3482,13 +3523,6 @@ function tryOpenActivityReportAfterFlyer(){
 
   activityReportPendingAfterFlyer =
     false;
-
-  if(
-    !activityReportRows.length
-  ){
-    return;
-  }
-
 
   setTimeout(
     openActivityReport,

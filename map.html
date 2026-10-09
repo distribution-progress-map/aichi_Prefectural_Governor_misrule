@@ -1160,6 +1160,26 @@ body{
   text-align:center;
 }
 
+.activity-report-total{
+  margin-bottom:14px;
+  color:#333;
+  font-size:17px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.activity-report-total-count{
+  text-decoration:underline;
+  text-decoration-color:#f59e0b;
+  text-decoration-thickness:2px;
+  text-underline-offset:4px;
+}
+
+.activity-report-list{
+  border-top:1px solid #e5e5e5;
+  padding-top:9px;
+}
+
 
 
 @media (min-width:601px){
@@ -1614,6 +1634,10 @@ body{
     margin-bottom:10px;
   }
 
+  .activity-report-total{
+    font-size:15px;
+    margin-bottom:12px;
+  }
 
 }
 
@@ -3348,6 +3372,11 @@ body{
       いつもありがとうございます！
     </div>
 
+    <div class="activity-report-total">
+      <span id="activityReportAreaName"></span>の配布完了枚数：
+      <span id="activityReportTotalCount" class="activity-report-total-count">0枚</span>
+    </div>
+
     <div
       id="activityReportList"
       class="activity-report-list"
@@ -3817,6 +3846,8 @@ const FLYER_VIEW_KEY =
 */
 let activityReportRows = [];
 
+let activityReportTotalCount = 0;
+
 
 /*
   スプレッドシートデータを
@@ -3988,11 +4019,18 @@ function prepareActivityReport(areas){
   ){
 
     activityReportRows = [];
+    activityReportTotalCount = 0;
 
     tryOpenActivityReportAfterFlyer();
 
     return;
   }
+
+  activityReportTotalCount = areas.reduce(function(total, row){
+    if(!row || row["種類"] !== "配布済") return total;
+    const count = getAreaCountNumber(row["枚数"]);
+    return count !== null && count >= 0 ? total + count : total;
+  }, 0);
 
 
   const now =
@@ -4123,6 +4161,11 @@ function prepareActivityReport(areas){
 
       });
 
+  const reportOverlay = document.getElementById("activityReportOverlay");
+  if(reportOverlay && reportOverlay.classList.contains("open")){
+    renderActivityReport();
+  }
+
 
   /*
     チラシをすでに閉じていて
@@ -4137,6 +4180,20 @@ function prepareActivityReport(areas){
 */
 function renderActivityReport(){
 
+  const areaNameElement =
+    document.getElementById("activityReportAreaName");
+
+  if(areaNameElement){
+    areaNameElement.textContent =
+      CURRENT_CITY || "愛知県全域";
+  }
+
+  const totalElement = document.getElementById("activityReportTotalCount");
+  if(totalElement){
+    totalElement.textContent =
+      activityReportTotalCount.toLocaleString("ja-JP") + "枚";
+  }
+
   const list =
     document.getElementById(
       "activityReportList"
@@ -4148,7 +4205,7 @@ function renderActivityReport(){
 
 
   list.innerHTML =
-    activityReportRows
+    (activityReportRows.length ? activityReportRows
       .map(function(item){
 
         return (
@@ -4176,7 +4233,7 @@ function renderActivityReport(){
         );
 
       })
-      .join("");
+      .join("") : '<div class="activity-report-item">直近2週間の活動報告はありません。</div>');
 }
 
 
@@ -4184,14 +4241,6 @@ function renderActivityReport(){
   活動報告を開く
 */
 function openActivityReport(){
-
-  if(
-    !activityReportRows.length
-  ){
-    return;
-  }
-
-
   renderActivityReport();
 
 
@@ -4296,13 +4345,6 @@ function tryOpenActivityReportAfterFlyer(){
 
   activityReportPendingAfterFlyer =
     false;
-
-
-  if(
-    !activityReportRows.length
-  ){
-    return;
-  }
 
 
   setTimeout(
@@ -9308,27 +9350,38 @@ function clearAreaLayers(){
 
 function renderAreaData(json){
 
-  if(
-    !json ||
-    !Array.isArray(json.areas)
-  ){
+  if(!json){
     return;
   }
+
+  /*
+    活動実績が0件の市では、Apps Scriptから
+    空配列だけが返る場合もある。
+    その場合も「取得完了」として活動報告を表示する。
+  */
+  const areas =
+    Array.isArray(json)
+      ? json
+      : (
+          Array.isArray(json.areas)
+            ? json.areas
+            : []
+        );
 
   clearAreaLayers();
 
   renderAdminHistory(
-    json.areas
+    areas
   );
 
   prepareActivityReport(
-    json.areas
+    areas
   );
 
   const planned = [];
   const done = [];
 
-  json.areas.forEach(row => {
+  areas.forEach(row => {
 
     if(!row) return;
     if(!row["ID"]) return;
