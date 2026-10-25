@@ -1905,8 +1905,8 @@ body{
   }
 
   /* 市町村ページへ移動 */
-  #areaDetailPopupContent > .popup-admin-btn{
-    margin-top:5px !important;
+  #areaDetailPopupContent > .area-detail-action-row > .popup-admin-btn{
+    margin-top:0 !important;
     padding:3px 6px !important;
     font-size:10px !important;
     line-height:1.25;
@@ -6361,7 +6361,7 @@ function makeParentAreaDetailHtml(row){
         ※作図済みエリアの修正・削除依頼は、各市町村ページにて
       </div>
 
-    <div style="
+    <div class="area-detail-action-row" style="
       display:flex;
       align-items:center;
       gap:8px;
