@@ -2105,6 +2105,13 @@ body{
 }
 /* パソコンのみの設定 */
 
+.area-detail-request-pending{
+  color:#d00000;
+  font-size:13px;
+  font-weight:bold;
+  white-space:nowrap;
+}
+
 
 </style>
 </head>
@@ -5260,6 +5267,21 @@ function openPopupAbove(layer){
   layer.openPopup(topCenter);
 }
 
+function makeCorrectionPendingHtml(row){
+
+  const hasRequest =
+    String(row["修正依頼日時"] || "").trim() !== "";
+
+  const hasCompleted =
+    String(row["管理者修正日時"] || "").trim() !== "";
+
+  if(hasRequest && !hasCompleted){
+    return '<span class="area-detail-request-pending">※修正依頼中</span>';
+  }
+
+  return "";
+}
+
 function makePopupHtml(row, isPlanned){
 
   let html =
@@ -6339,17 +6361,24 @@ function makeParentAreaDetailHtml(row){
         ※作図済みエリアの修正・削除依頼は、各市町村ページにて
       </div>
 
-    <button
-      type="button"
-      class="popup-admin-btn"
-      onclick="goToAreaCity('${row["市町村"] || ""}', '${row["ID"] || ""}')"
-      style="
-        margin-top:8px;
-        font-weight:bold;
-      "
-    >
-      ${row["市町村"] || "市町村"}ページへ移動
-    </button>
+    <div style="
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    ">
+      <button
+        type="button"
+        class="popup-admin-btn"
+        onclick="goToAreaCity('${row["市町村"] || ""}', '${row["ID"] || ""}')"
+        style="font-weight:bold;"
+      >
+        ${row["市町村"] || "市町村"}ページへ移動
+      </button>
+
+      ${makeCorrectionPendingHtml(row)}
+    </div>
 
     <hr style="
       margin:10px 0;

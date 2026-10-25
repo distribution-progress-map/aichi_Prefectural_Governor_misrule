@@ -2694,6 +2694,14 @@ body{
   .draw-area-preview-no-desktop{display:none}
   .draw-area-preview-no-mobile{display:inline}
 }
+
+.area-detail-request-pending{
+  color:#d00000;
+  font-size:13px;
+  font-weight:bold;
+  white-space:nowrap;
+}
+
 </style>
 </head>
 
@@ -11080,6 +11088,20 @@ areaDetailDragHandle.addEventListener(
   stopAreaPopupDrag
 );
 
+function makeCorrectionPendingHtml(row){
+
+  const hasRequest =
+    String(row["修正依頼日時"] || "").trim() !== "";
+
+  const hasCompleted =
+    String(row["管理者修正日時"] || "").trim() !== "";
+
+  if(hasRequest && !hasCompleted){
+    return '<span class="area-detail-request-pending">※修正依頼中</span>';
+  }
+
+  return "";
+}
 
 function makePopupHtml(row, isPlanned){
 
@@ -11137,11 +11159,21 @@ function makePopupHtml(row, isPlanned){
 
 
   html += `
-  <div class="popup-request-button-row">
-    <button class="popup-admin-btn" onclick="openRequestMenu('${row["ID"]}')">
-      管理者へ修正依頼
-    </button>
-  </div>`;
+    <div
+      class="popup-request-button-row"
+      style="
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        flex-wrap:nowrap;
+      "
+    >
+      <button class="popup-admin-btn" onclick="openRequestMenu('${row["ID"]}')">
+        管理者へ修正依頼
+      </button>
+
+      ${makeCorrectionPendingHtml(row)}
+    </div>`;
 
 
   html += `
