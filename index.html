@@ -3065,8 +3065,7 @@ function parseActivityDate(value){
     return null;
   }
 
-  const text =
-    String(value).trim();
+  const text = String(value).trim();
 
   if(!text){
     return null;
@@ -3074,32 +3073,47 @@ function parseActivityDate(value){
 
 
   /*
-    2026/9/25
-    2026-9-25
-    などを優先して処理
+    Apps Scriptから届くISO形式を先に処理
+    例：2026-11-19T15:00:00.000Z
+    日本時間では2026年11月20日
   */
-  const match =
-    text.match(
-      /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/
-    );
+  if(
+    /^\d{4}-\d{1,2}-\d{1,2}T/.test(text)
+  ){
+
+    const isoDate = new Date(text);
+
+    if(
+      !Number.isNaN(
+        isoDate.getTime()
+      )
+    ){
+      return isoDate;
+    }
+
+  }
+
+
+  /*
+    2026/11/20
+    2026-11-20
+    のような日付だけの形式
+  */
+  const match = text.match(
+    /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
+  );
 
   if(match){
 
-    const year =
-      Number(match[1]);
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
 
-    const month =
-      Number(match[2]);
-
-    const day =
-      Number(match[3]);
-
-    const date =
-      new Date(
-        year,
-        month - 1,
-        day
-      );
+    const date = new Date(
+      year,
+      month - 1,
+      day
+    );
 
     if(
       date.getFullYear() === year &&
@@ -3113,11 +3127,9 @@ function parseActivityDate(value){
 
 
   /*
-    登録日時などの
-    ISO形式にも対応
+    その他の日時形式
   */
-  const date =
-    new Date(text);
+  const date = new Date(text);
 
   if(
     Number.isNaN(
@@ -3136,12 +3148,15 @@ function parseActivityDate(value){
 */
 function formatActivityDate(date){
 
-  return (
-    (date.getMonth() + 1) +
-    "月" +
-    date.getDate() +
-    "日"
-  );
+  return new Intl.DateTimeFormat(
+    "ja-JP",
+    {
+      timeZone: "Asia/Tokyo",
+      month: "long",
+      day: "numeric"
+    }
+  ).format(date);
+
 }
 
 
